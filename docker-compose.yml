@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: agrisync
+      POSTGRES_PASSWORD: agrisync
+      POSTGRES_DB: agrisync
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agrisync"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # AMD MI300X passthrough — uncomment on AMD Developer Cloud node:
+    # devices:
+    #   - driver: amdgpu
+    #     count: 1
+    #     capabilities: [gpu, compute]
+    volumes:
+      - ./backend:/app
+      - hf_cache:/root/.cache/huggingface
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  seed:
+    build: ./backend
+    env_file: ./backend/.env
+    command: python -m app.db.seed
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_data:
+  hf_cache:

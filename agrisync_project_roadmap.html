@@ -1,0 +1,434 @@
+
+<style>
+  :root {
+    --green-dk: #1a5c2a;
+    --green-md: #2d7a40;
+    --green-lt: #e8f5ec;
+    --amber: #c47a15;
+    --amber-lt: #fdf3e1;
+    --teal: #0f6e56;
+    --teal-lt: #e1f5ee;
+    --coral: #993c1d;
+    --coral-lt: #faece7;
+    --blue-dk: #0c447c;
+    --blue-lt: #e6f1fb;
+  }
+
+  .page { padding: 1.5rem 0; font-family: var(--font-sans); }
+
+  .hero { text-align: center; margin-bottom: 2rem; }
+  .hero-badge {
+    display: inline-block;
+    background: var(--green-lt);
+    color: var(--green-dk);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 0.5px solid #b6dfc0;
+    margin-bottom: 10px;
+  }
+  .hero h1 {
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin: 0 0 6px;
+  }
+  .hero p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin: 0 0 10px;
+    padding-left: 2px;
+  }
+
+  /* PHASE CARDS */
+  .phases { display: flex; flex-direction: column; gap: 10px; margin-bottom: 2rem; }
+
+  .phase-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    background: var(--color-background-primary);
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow .15s;
+  }
+  .phase-card:hover { border-color: var(--color-border-secondary); }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .phase-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .phase-meta { flex: 1; min-width: 0; }
+  .phase-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 2px; }
+  .phase-sub   { font-size: 12px; color: var(--color-text-secondary); margin: 0; }
+
+  .phase-tag {
+    font-size: 11px; font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .phase-body {
+    display: none;
+    padding: 0 16px 14px 60px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+  }
+  .phase-body.open { display: block; }
+
+  .task-list { list-style: none; margin: 10px 0 0; padding: 0; }
+  .task-list li {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 13px; color: var(--color-text-secondary);
+    padding: 4px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .task-list li:last-child { border-bottom: none; }
+
+  .task-check {
+    width: 14px; height: 14px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .task-check.done {
+    background: var(--green-md);
+    border-color: var(--green-md);
+    position: relative;
+  }
+  .task-check.done::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 1px;
+    width: 5px; height: 8px;
+    border: 1.5px solid #fff;
+    border-top: none; border-left: none;
+    transform: rotate(45deg);
+  }
+
+  .phase-arrow {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    transition: transform .2s;
+    flex-shrink: 0;
+  }
+  .phase-card.open .phase-arrow { transform: rotate(180deg); }
+
+  /* COLORS per phase */
+  .ph0 .phase-dot { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+  .ph0 .phase-tag { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+
+  .ph1 .phase-dot { background: var(--blue-lt); color: var(--blue-dk); }
+  .ph1 .phase-tag { background: var(--blue-lt); color: var(--blue-dk); }
+
+  .ph2 .phase-dot { background: var(--teal-lt); color: var(--teal); }
+  .ph2 .phase-tag { background: var(--teal-lt); color: var(--teal); }
+
+  .ph3 .phase-dot { background: var(--amber-lt); color: var(--amber); }
+  .ph3 .phase-tag { background: var(--amber-lt); color: var(--amber); }
+
+  .ph4 .phase-dot { background: var(--green-lt); color: var(--green-dk); }
+  .ph4 .phase-tag { background: var(--green-lt); color: var(--green-dk); }
+
+  .ph5 .phase-dot { background: var(--coral-lt); color: var(--coral); }
+  .ph5 .phase-tag { background: var(--coral-lt); color: var(--coral); }
+
+  .ph6 .phase-dot { background: #f0ebfe; color: #3c3489; }
+  .ph6 .phase-tag { background: #f0ebfe; color: #3c3489; }
+
+  /* DECISIONS PANEL */
+  .decisions {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    background: var(--color-background-primary);
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .decisions-header {
+    padding: 14px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    font-size: 13px; font-weight: 500;
+    color: var(--color-text-primary);
+  }
+  .decision-row {
+    display: flex; gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    align-items: flex-start;
+  }
+  .decision-row:last-child { border-bottom: none; }
+  .decision-icon {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .decision-content { flex: 1; min-width: 0; }
+  .decision-q { font-size: 12px; color: var(--color-text-secondary); margin: 0 0 3px; }
+  .decision-a { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin: 0; }
+  .decision-note { font-size: 11px; color: var(--color-text-secondary); margin: 4px 0 0; }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    height: 4px;
+    background: var(--color-border-tertiary);
+    border-radius: 2px;
+    margin: 8px 0 4px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green-md);
+    border-radius: 2px;
+    transition: width .3s;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    text-align: right;
+  }
+</style>
+
+<div class="page">
+  <div class="hero">
+    <div class="hero-badge">AMD Developer Hackathon 2026</div>
+    <h1>AgriSync — Project Roadmap</h1>
+    <p>From hackathon prototype to East Africa's agricultural intelligence platform</p>
+  </div>
+
+  <div class="section-label">Key decisions locked in</div>
+  <div class="decisions">
+    <div class="decisions-header">Architecture & Technical Choices</div>
+
+    <div class="decision-row">
+      <div class="decision-icon" style="background:var(--green-lt)">🌱</div>
+      <div class="decision-content">
+        <p class="decision-q">Project name</p>
+        <p class="decision-a">AgriSync</p>
+        <p class="decision-note">Consistent across all slides, repo, social posts, and demo</p>
+      </div>
+    </div>
+
+    <div class="decision-row">
+      <div class="decision-icon" style="background:var(--blue-lt)">🔬</div>
+      <div class="decision-content">
+        <p class="decision-q">Vision model</p>
+        <p class="decision-a">LLaVA-v1.5-7B — fine-tuned on plant leaf diseases (HuggingFace)</p>
+        <p class="decision-note">Free, open-source, ROCm-compatible, outputs human-verifiable symptom descriptions. Model ID: YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection</p>
+      </div>
+    </div>
+
+    <div class="decision-row">
+      <div class="decision-icon" style="background:var(--teal-lt)">⚡</div>
+      <div class="decision-content">
+        <p class="decision-q">ERP / Odoo integration</p>
+        <p class="decision-a">Removed — replaced with mock agro-vet inventory API layer</p>
+        <p class="decision-note">Eliminates the biggest single-point-of-failure risk in a 6-day build</p>
+      </div>
+    </div>
+
+    <div class="decision-row">
+      <div class="decision-icon" style="background:var(--amber-lt)">📊</div>
+      <div class="decision-content">
+        <p class="decision-q">Impact metrics sourcing</p>
+        <p class="decision-a">4,000 KES → Kenya MoA 2023 transport cost data. 24h saved → WHO agronomist access stats</p>
+        <p class="decision-note">Footnote these on the metrics slide — judges will ask</p>
+      </div>
+    </div>
+
+    <div class="decision-row">
+      <div class="decision-icon" style="background:var(--coral-lt)">🧠</div>
+      <div class="decision-content">
+        <p class="decision-q">Orchestrator agent model</p>
+        <p class="decision-a">Mistral-7B-Instruct via CrewAI — formats final plain-language output in Swahili + English</p>
+        <p class="decision-note">Input: agent outputs → Output: "Leo uza sokoni B. Utapata KES 4,000 zaidi."</p>
+      </div>
+    </div>
+
+    <div class="decision-row">
+      <div class="decision-icon" style="background:#f0ebfe">📶</div>
+      <div class="decision-content">
+        <p class="decision-q">Offline / low-connectivity fallback</p>
+        <p class="decision-a">SMS output via Africa's Talking API (mentioned in architecture slide)</p>
+        <p class="decision-note">Move this from roadmap-only to the architecture slide — judges will notice rural Kenya context</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Execution roadmap — click any phase to expand</div>
+
+  <div id="progress-wrap" style="margin-bottom:14px">
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="prog-bar" style="width:0%"></div></div>
+    <p class="progress-label" id="prog-label">0 of 35 tasks complete</p>
+  </div>
+
+  <div class="phases" id="phases-list"></div>
+</div>
+
+<script>
+const phases = [
+  {
+    id: 'ph0', label: 'Phase 0', title: 'Pre-Build Alignment', sub: 'Before Day 1 — locks & team roles',
+    tag: 'Pre-hackathon',
+    tasks: [
+      'Rename everything to AgriSync — GitHub repo, all slide titles, README',
+      'Lock vision model: pull YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection locally and test one image',
+      'Assign team roles: (1) AMD infra + models, (2) backend + agents, (3) frontend, (4) data + demo',
+      'Draft mock data schema: 4 markets (Nairobi, Mombasa, Kisumu, Nakuru), 8 diseases, 12 agro-chemicals',
+      'Source impact metrics: bookmark Kenya MoA 2023 report and WHO agronomist access data',
+    ]
+  },
+  {
+    id: 'ph1', label: 'Phase 1', title: 'Infrastructure & Model Deployment', sub: 'Days 1–2',
+    tag: 'Days 1–2',
+    tasks: [
+      'Spin up AMD Developer Cloud MI300X instance and run rocminfo to confirm GPU visibility',
+      'Install ROCm, PyTorch ROCm build, and HuggingFace transformers',
+      'Pull LLaVA-v1.5-7B plant disease model and run inference on 3 test tomato/maize images',
+      'Log GPU utilisation during inference — screenshot for demo evidence of MI300X usage',
+      'Set up FastAPI skeleton with /diagnose and /arbitrage endpoints returning mock JSON',
+      'Initialise CrewAI project with 3 agent class stubs: Agronomist, ArbitrageEngine, Orchestrator',
+      'Milestone checkpoint ✓ Vision model returns disease name + symptom description for a test image',
+    ]
+  },
+  {
+    id: 'ph2', label: 'Phase 2', title: 'Agent Logic & Data Layer', sub: 'Days 3–4',
+    tag: 'Days 3–4',
+    tasks: [
+      'PostgreSQL schema: markets, crops, chemicals, distances, prices tables',
+      'Populate with realistic Kenyan mock data (prices in KES, distances in km, transport cost formula)',
+      'Build Agronomist Agent: image → LLaVA inference → DB chemical lookup → recommendation JSON',
+      'Build Arbitrage Engine: crop + volume → price query → net profit calc per market → ranked list',
+      'Build Orchestrator: routes inputs, merges agent outputs, formats bilingual plain-language report',
+      'Replace Odoo with mock ERP layer: /inventory endpoint returning realistic stock levels',
+      'Milestone checkpoint ✓ Full end-to-end agent run completes via curl with no frontend',
+    ]
+  },
+  {
+    id: 'ph3', label: 'Phase 3', title: 'Frontend & Integration', sub: 'Day 5',
+    tag: 'Day 5',
+    tasks: [
+      'React app — 3 screens only: (1) Upload photo → diagnosis, (2) Enter harvest → market rec, (3) Summary report',
+      'Mobile-first layout: tested on 375px viewport (iPhone SE proxy)',
+      'Camera upload component with loading state and "Analyzing on AMD MI300X..." indicator',
+      'Connect all React screens to FastAPI endpoints',
+      'Add graceful error states: model fails → "Please retake photo in better light"',
+      'Milestone checkpoint ✓ Full user journey works in mobile browser without errors',
+    ]
+  },
+  {
+    id: 'ph4', label: 'Phase 4', title: 'Polish, Demo & Submission', sub: 'Day 6',
+    tag: 'Day 6',
+    tasks: [
+      'Pre-record 3 demo scenarios: disease detected, best market found, orchestrator combining both',
+      'Show AMD MI300X GPU utilisation log explicitly in the demo recording',
+      'Add SMS output mockup slide showing Africa\'s Talking API integration plan',
+      'Post architecture diagram on X and LinkedIn tagging @AMD and @lablab_ai (Build in Public bonus)',
+      'Final submission: GitHub repo, demo video, updated deck with AgriSync branding throughout',
+    ]
+  },
+  {
+    id: 'ph5', label: 'Phase 5', title: 'Post-Hackathon MVP', sub: 'Weeks 2–4 after hackathon',
+    tag: 'Post-hackathon',
+    tasks: [
+      'Replace mock market data with real KACE (Kenya Agricultural Commodity Exchange) API',
+      'Integrate Africa\'s Talking API for live SMS output to feature phone users',
+      'Fine-tune LLaVA on East African crop disease images from PlantVillage + local farmer photos',
+      'Add basic user auth and farmer profile persistence',
+      'Harden arbitrage engine with real fuel price feed (EPRA Kenya)',
+    ]
+  },
+  {
+    id: 'ph6', label: 'Phase 6', title: 'Pilot & Scale', sub: 'Months 2–6',
+    tag: 'Growth',
+    tasks: [
+      'Partner with one Kenyan agricultural cooperative for 50–100 farmer beta',
+      'Collect real disease photo data to continuously retrain the vision model',
+      'Build coordinator analytics dashboard: disease outbreak heatmap per region',
+      'Expand market price data to Uganda and Tanzania hubs',
+      'Apply to AGRA innovation grants and Kenya Climate Innovation Center funding',
+      'Explore USSD interface for 2G-only regions (no smartphone required)',
+    ]
+  },
+];
+
+const totalTasks = phases.reduce((s, p) => s + p.tasks.length, 0);
+const done = {};
+phases.forEach(p => p.tasks.forEach((_, i) => done[`${p.id}-${i}`] = false));
+
+function updateProgress() {
+  const n = Object.values(done).filter(Boolean).length;
+  document.getElementById('prog-bar').style.width = Math.round(n/totalTasks*100)+'%';
+  document.getElementById('prog-label').textContent = `${n} of ${totalTasks} tasks complete`;
+}
+
+const list = document.getElementById('phases-list');
+phases.forEach(ph => {
+  const card = document.createElement('div');
+  card.className = `phase-card ${ph.id}`;
+  card.innerHTML = `
+    <div class="phase-header">
+      <div class="phase-dot">${ph.label.replace('Phase ','')}</div>
+      <div class="phase-meta">
+        <p class="phase-title">${ph.title}</p>
+        <p class="phase-sub">${ph.sub}</p>
+      </div>
+      <span class="phase-tag">${ph.tag}</span>
+      <span class="phase-arrow">▾</span>
+    </div>
+    <div class="phase-body">
+      <ul class="task-list">
+        ${ph.tasks.map((t, i) => `
+          <li>
+            <div class="task-check" data-key="${ph.id}-${i}" onclick="toggleTask(this)"></div>
+            <span>${t}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  `;
+  card.querySelector('.phase-header').addEventListener('click', () => {
+    const body = card.querySelector('.phase-body');
+    body.classList.toggle('open');
+    card.classList.toggle('open');
+  });
+  list.appendChild(card);
+});
+
+function toggleTask(el) {
+  el.stopPropagation && el.stopPropagation();
+  const key = el.dataset.key;
+  done[key] = !done[key];
+  el.classList.toggle('done', done[key]);
+  updateProgress();
+}
+
+updateProgress();
+</script>
