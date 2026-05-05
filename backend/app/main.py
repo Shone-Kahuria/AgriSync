@@ -1,10 +1,41 @@
+import asyncio
+import logging
+import logging.config
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
+logging.config.dictConfig({
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "format": '{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","msg":%(message)r}',
+            "datefmt": "%Y-%m-%dT%H:%M:%SZ",
+        }
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "json"},
+    },
+    "root": {"level": "INFO", "handlers": ["console"]},
+    "loggers": {
+        "agrisync": {"level": "INFO", "propagate": True},
+        "uvicorn.access": {"level": "INFO", "propagate": True},
+    },
+})
+
+from fastapi import FastAPI, Depends, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from app.config import settings
+from app.auth import require_api_key
+from app.limiter import limiter
 from app.db.database import engine
 from app.db.models import Base
 from app.routers import diagnose, arbitrage, inventory, report, pipeline
+
+logger = logging.getLogger("agrisync")
 
 
 @asynccontextmanager
@@ -19,12 +50,18 @@ app = FastAPI(
     description="Agricultural intelligence platform — AMD MI300X × CrewAI × LLaVA-v1.5-7B",
     version="1.0.0",
     lifespan=lifespan,
+    dependencies=[Depends(require_api_key)],
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS — restrict to configured origin(s) in production
+_origins = [o.strip() for o in settings.frontend_url.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=_origins,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -41,7 +78,8 @@ async def health():
 
 
 @app.get("/gpu-info")
-async def gpu_info():
+@limiter.limit("60/minute")
+async def gpu_info(request: Request):
     from app.vision.inference import last_inference_ms
     info = {
         "gpu": "none",
@@ -53,11 +91,12 @@ async def gpu_info():
         import torch
         if torch.cuda.is_available():
             props = torch.cuda.get_device_properties(0)
+            util = await asyncio.to_thread(_rocm_util)
             info.update({
                 "gpu": torch.cuda.get_device_name(0),
                 "memory_gb": props.total_memory // (1024 ** 3),
                 "backend": "ROCm",
-                "utilization_pct": _rocm_util(),
+                "utilization_pct": util,
             })
     except Exception:
         pass

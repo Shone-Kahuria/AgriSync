@@ -1,9 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
+
+# ~8 MB binary → ~10.7 MB base64; 15 MB base64 cap prevents trivial DoS
+_MAX_IMAGE_B64 = 15 * 1024 * 1024
 
 
 class DiagnoseRequest(BaseModel):
-    image_base64: str
+    image_base64: str = Field(..., max_length=_MAX_IMAGE_B64)
     crop_type: Optional[str] = None
 
 

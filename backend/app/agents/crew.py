@@ -1,13 +1,15 @@
 """
-AgriSync CrewAI pipeline.
+AgriSync CrewAI pipeline — Track 1 (Agentic Workflows) + Track 3 (Vision & Multimodal).
 
 Three agents run sequentially:
-  1. AgronomistAgent  — interprets vision output → treatment plan
-  2. ArbitrageAgent   — analyses market data → sell recommendation
-  3. OrchestratorAgent — combines both → bilingual plain-language report
+  1. AgronomistAgent    — calls TreatmentProtocolTool → treatment plan
+  2. ArbitrageAgent     — calls MarketPriceTool       → sell recommendation
+  3. OrchestratorAgent  — combines both               → bilingual report + SMS
 
-In mock mode  : agents use AgriSyncMockLLM (no GPU, no API key).
-In real mode  : agents use Mistral-7B-Instruct on AMD MI300X via ROCm.
+In mock mode  : agents use AgriSyncMockLLM; tools are pre-called and their
+                output is embedded in task descriptions so data flows through.
+In real mode  : agents use Mistral-7B-Instruct on AMD MI300X and call tools
+                autonomously during task execution.
 """
 import asyncio
 from typing import Optional
@@ -15,6 +17,7 @@ from typing import Optional
 from crewai import Agent, Task, Crew, Process
 
 from app.agents.llm import get_llm
+from app.agents.tools import TreatmentProtocolTool, MarketPriceTool
 from app.schemas.models import DiagnoseResponse, ArbitrageResponse
 
 
@@ -29,10 +32,24 @@ def _build_and_run(
 ) -> tuple[str, str, str]:
     """Build and run the AgriSync crew. Returns (english, swahili, sms)."""
 
+    treatment_tool = TreatmentProtocolTool()
+    market_tool = MarketPriceTool()
+
+    # ---- Pre-call tools to embed live data in task descriptions ----
+    # This ensures data-rich context even when the mock LLM is active.
+    treatment_data = (
+        treatment_tool._run(diag.disease_name) if diag else
+        "No disease diagnosis — skipping treatment lookup."
+    )
+    market_data = (
+        market_tool._run(arb.crop) if arb else
+        "No crop data — skipping market price lookup."
+    )
+
     # ---- shared context dicts passed to mock LLM ----
-    diag_ctx = {}
-    arb_ctx = {}
-    orch_ctx = {"farmer": farmer}
+    diag_ctx: dict = {}
+    arb_ctx: dict = {}
+    orch_ctx: dict = {"farmer": farmer}
 
     if diag:
         first_chem = diag.recommendations[0] if diag.recommendations else None
@@ -77,14 +94,17 @@ def _build_and_run(
         role="Senior Plant Pathologist",
         goal=(
             "Interpret crop disease diagnosis results and produce a clear "
-            "treatment recommendation that a smallholder farmer can act on immediately."
+            "treatment recommendation that a smallholder farmer can act on immediately. "
+            "Use the Treatment Protocol Lookup tool to verify available chemicals and costs."
         ),
         backstory=(
-            "You are a plant pathologist with 20 years of field experience "
-            "across Kenya, Uganda, and Tanzania. You specialise in identifying "
-            "and treating common smallholder crop diseases quickly and affordably."
+            "You are a plant pathologist with 20 years of field experience across "
+            "Kenya, Uganda, and Tanzania. You specialise in identifying and treating "
+            "common smallholder crop diseases quickly and affordably. You always "
+            "check the AgriSync inventory before recommending a chemical."
         ),
         llm=get_llm(diag_ctx),
+        tools=[treatment_tool],
         allow_delegation=False,
         verbose=True,
     )
@@ -94,14 +114,17 @@ def _build_and_run(
         role="Agricultural Market Analyst",
         goal=(
             "Analyse real-time crop prices across Kenyan markets and recommend "
-            "the most profitable selling destination after accounting for transport costs."
+            "the most profitable selling destination after accounting for transport costs. "
+            "Use the Market Price Lookup tool to fetch live prices."
         ),
         backstory=(
             "You are a market analyst at the Kenya Agricultural Commodity Exchange (KACE). "
             "You have deep knowledge of seasonal price patterns, transport logistics, "
-            "and KES/kg margins across Nairobi, Mombasa, Kisumu, and Nakuru."
+            "and KES/kg margins across Nairobi, Mombasa, Kisumu, and Nakuru. "
+            "You always verify prices from the live AgriSync database before advising."
         ),
         llm=get_llm(arb_ctx),
+        tools=[market_tool],
         allow_delegation=False,
         verbose=True,
     )
@@ -127,34 +150,47 @@ def _build_and_run(
     # ---- Tasks ----
     diag_summary = (
         f"Disease: {diag.disease_name}, severity={diag.severity}, "
-        f"confidence={int(diag.confidence*100)}%, "
-        f"recommended chemical: {diag_ctx.get('chemical','N/A')} at {diag_ctx.get('dosage','N/A')}."
+        f"confidence={int(diag.confidence * 100)}%."
         if diag else "No disease diagnosis available."
     )
 
     market_summary = (
-        f"Crop: {arb.crop}, volume: {arb.volume_kg} kg, "
-        f"best market: {arb.best_market} (net KES {arb.markets[0].net_profit_kes:,.0f}), "
-        f"extra profit vs worst: KES {arb.extra_profit_vs_worst_kes:,.0f}."
+        f"Crop: {arb.crop}, volume: {arb.volume_kg} kg, origin: Nakuru."
         if arb else "No market data available."
     )
 
     task_diagnose = Task(
         description=(
-            f"Review the following plant disease data and write a concise treatment plan "
-            f"for a Kenyan smallholder farmer.\n\nData: {diag_summary}"
+            f"A Kenyan smallholder farmer's crop has been diagnosed by the AgriSync "
+            f"vision AI (Llama-3.2-11B-Vision-Instruct on AMD MI300X).\n\n"
+            f"Diagnosis summary: {diag_summary}\n\n"
+            f"Live treatment data from AgriSync inventory:\n{treatment_data}\n\n"
+            f"Write a concise 2-3 sentence treatment plan naming the most affordable "
+            f"in-stock chemical, its exact dosage, application method, cost in KES, "
+            f"and urgency level. If you need to verify availability, use the "
+            f"Treatment Protocol Lookup tool."
         ),
         agent=agronomist,
-        expected_output="A 2–3 sentence treatment plan naming the chemical, dosage, and urgency.",
+        expected_output=(
+            "A 2-3 sentence treatment plan: chemical name, dosage, application, "
+            "KES cost, and urgency (treat within X days)."
+        ),
     )
 
     task_market = Task(
         description=(
-            f"Review the following market analysis data and explain the best selling "
-            f"strategy for the farmer.\n\nData: {market_summary}"
+            f"A Kenyan farmer wants to sell their harvest. Details: {market_summary}\n\n"
+            f"Live market prices from AgriSync database:\n{market_data}\n\n"
+            f"Recommend the single best market to sell at, citing the net KES/kg "
+            f"figure and how much more profit it offers versus the worst option. "
+            f"Include transport distance and cost. Use the Market Price Lookup tool "
+            f"if you need to verify or expand on the data above."
         ),
         agent=arbitrage_analyst,
-        expected_output="A 2–3 sentence market recommendation with specific KES figures.",
+        expected_output=(
+            "A 2-3 sentence market recommendation: best market city, net KES/kg, "
+            "distance, and extra profit vs worst option."
+        ),
     )
 
     task_report = Task(
@@ -180,14 +216,15 @@ def _build_and_run(
     )
 
     raw_output = crew.kickoff()
-    # CrewAI 1.x returns CrewOutput — use .raw to get the full string
     raw = raw_output.raw if hasattr(raw_output, "raw") else str(raw_output)
-
     return _parse_crew_output(raw, diag, arb, farmer)
 
 
+# ---------------------------------------------------------------------------
+# Output parser
+# ---------------------------------------------------------------------------
+
 def _strip_header(text: str, headers: tuple[str, ...]) -> str:
-    """Remove a leading section label (e.g. 'English:') from a text block."""
     lower = text.lower().lstrip()
     for h in headers:
         if lower.startswith(h):
@@ -201,34 +238,26 @@ def _parse_crew_output(
     arb: Optional[ArbitrageResponse],
     farmer: str,
 ) -> tuple[str, str, str]:
-    """
-    Extract English report, Swahili report, and SMS from crew output.
-    Falls back to template strings if parsing fails.
-    """
     lines = [l.strip() for l in raw.split("\n") if l.strip()]
 
-    # Find SMS line
     sms = ""
     for line in lines:
         if line.upper().startswith("SMS:"):
             sms = line[4:].strip()[:160]
             break
 
-    # Split English / Swahili by "Swahili" or "Kiswahili" header
     lower = raw.lower()
     sw_idx = max(lower.find("swahili"), lower.find("kiswahili"))
     if sw_idx > 20:
         english_block = raw[:sw_idx].strip()
         swahili_block = raw[sw_idx:].strip()
-        # Strip section header labels ("English:", "Swahili:") if present
         english = _strip_header(english_block, ("english:",))
-        # Remove SMS line from swahili block
         sw_no_sms = "\n".join(
-            l for l in swahili_block.split("\n") if not l.strip().upper().startswith("SMS:")
+            l for l in swahili_block.split("\n")
+            if not l.strip().upper().startswith("SMS:")
         ).strip()
         swahili = _strip_header(sw_no_sms, ("swahili:", "kiswahili:"))
     else:
-        # Couldn't split — use full text as English, build Swahili from template
         english = raw
         swahili = _fallback_swahili(diag, arb, farmer)
 
@@ -270,7 +299,9 @@ def _fallback_english(diag, arb, farmer) -> str:
 def _fallback_swahili(diag, arb, farmer) -> str:
     parts = [f"Habari {farmer},"]
     if diag:
-        sev_sw = {"high": "kali sana", "medium": "wastani", "low": "ndogo"}.get(diag.severity, diag.severity)
+        sev_sw = {"high": "kali sana", "medium": "wastani", "low": "ndogo"}.get(
+            diag.severity, diag.severity
+        )
         parts.append(
             f"Mmea wako una {diag.disease_name} (ukali: {sev_sw}). "
             f"Tumia {diag.recommendations[0].name if diag.recommendations else 'dawa'} haraka."

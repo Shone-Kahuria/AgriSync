@@ -10,3 +10,4 @@ dist/
 .pytest_cache/
 *.db
 hf_models/
+Hackathon Readiness for AgriSync.pdf

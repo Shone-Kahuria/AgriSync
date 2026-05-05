@@ -1,0 +1,5 @@
+{"time":"2026-05-05T04:37:20Z","level":"INFO","logger":"crewai.cli.config","msg":'Using config path: C:\\Users\\LEGION\\.config\\crewai\\settings.json'}
+INFO:     Started server process [33844]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)

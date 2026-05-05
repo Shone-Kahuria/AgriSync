@@ -4,15 +4,18 @@ Accepts an image + crop/volume and runs all three agents sequentially.
 Designed for the hackathon demo: judges can curl this single endpoint
 and see the entire AgriSync system working.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
+
+_MAX_IMAGE_B64 = 15 * 1024 * 1024
 
 from app.db.database import get_db
 from app.agents.agronomist import run_agronomist
 from app.agents.arbitrage import run_arbitrage
 from app.agents.orchestrator import run_orchestrator
+from app.limiter import limiter
 from app.schemas.models import (
     ArbitrageRequest, DiagnoseResponse, ArbitrageResponse, ReportResponse,
 )
@@ -22,7 +25,7 @@ router = APIRouter(prefix="/analyze", tags=["pipeline"])
 
 
 class AnalyzeRequest(BaseModel):
-    image_base64: str
+    image_base64: str = Field(..., max_length=_MAX_IMAGE_B64)
     crop: str = "Maize"
     volume_kg: float = 500.0
     origin_city: str = "Nakuru"
@@ -38,7 +41,8 @@ class AnalyzeResponse(BaseModel):
 
 
 @router.post("", response_model=AnalyzeResponse)
-async def full_pipeline(req: AnalyzeRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def full_pipeline(request: Request, req: AnalyzeRequest, db: AsyncSession = Depends(get_db)):
     try:
         diag = await run_agronomist(req.image_base64, db)
     except Exception as exc:

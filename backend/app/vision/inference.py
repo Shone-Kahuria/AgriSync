@@ -1,50 +1,87 @@
 """
-LLaVA-v1.5-7B plant disease inference.
+Vision inference — supports two real-model paths:
+  • llama32 : meta-llama/Llama-3.2-11B-Vision-Instruct  (Track 3 primary, ROCm-optimised)
+  • llava   : YuchengShi/LLaVA-v1.5-7B (fallback / domain-finetuned)
 
-On AMD MI300X: set USE_MOCK_VISION=false — model runs via ROCm.
-On any other machine: mock mode returns a deterministic response based on
-image content hash so the same photo always returns the same disease.
+Set USE_MOCK_VISION=false and VISION_MODEL=llama32|llava on the AMD MI300X node.
+In mock mode: deterministic response from image hash, no GPU needed.
 """
 import base64
 import hashlib
 import io
+import logging
 import time
 from typing import Optional
 
 from app.config import settings
 
-_model = None
-_processor = None
-_gpu_label = "mock"
+logger = logging.getLogger("agrisync.vision")
+
+# ---- shared state ----
 _last_inference_ms: float = 0.0
+_gpu_label: str = "mock"
+
+# ---- LLaVA-v1.5 state ----
+_llava_model = None
+_llava_processor = None
+
+# ---- Llama 3.2 Vision state ----
+_llama_model = None
+_llama_processor = None
 
 
 def last_inference_ms() -> float:
     return _last_inference_ms
 
 
-def _load_model():
-    global _model, _processor, _gpu_label
-    if _model is not None:
-        return
+# ---------------------------------------------------------------------------
+# Model loaders
+# ---------------------------------------------------------------------------
 
+def _load_llava():
+    global _llava_model, _llava_processor, _gpu_label
+    if _llava_model is not None:
+        return
     import torch
-    # LLaVA-v1.5 uses LlavaProcessor / LlavaForConditionalGeneration
-    # (LlavaNext* classes are for v1.6 — wrong for this model)
     from transformers import LlavaProcessor, LlavaForConditionalGeneration
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     _gpu_label = "AMD MI300X (ROCm)" if torch.cuda.is_available() else "CPU"
-
-    print(f"[AgriSync] Loading LLaVA on {_gpu_label}...")
-    _processor = LlavaProcessor.from_pretrained(settings.llava_model_id)
-    _model = LlavaForConditionalGeneration.from_pretrained(
+    logger.info("Loading LLaVA-v1.5 on %s", _gpu_label)
+    _llava_processor = LlavaProcessor.from_pretrained(settings.llava_model_id)
+    _llava_model = LlavaForConditionalGeneration.from_pretrained(
         settings.llava_model_id,
         torch_dtype=torch.float16 if device == "cuda" else torch.float32,
         device_map=device,
     )
-    print(f"[AgriSync] LLaVA loaded on {_gpu_label}.")
+    logger.info("LLaVA-v1.5 loaded on %s", _gpu_label)
 
+
+def _load_llama32():
+    global _llama_model, _llama_processor, _gpu_label
+    if _llama_model is not None:
+        return
+    import torch
+    from transformers import MllamaForConditionalGeneration, AutoProcessor
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    _gpu_label = "AMD MI300X (ROCm)" if torch.cuda.is_available() else "CPU"
+
+    kwargs = {"token": settings.huggingface_token} if settings.huggingface_token else {}
+    logger.info("Loading Llama-3.2-11B-Vision-Instruct on %s", _gpu_label)
+    _llama_processor = AutoProcessor.from_pretrained(settings.llama32_model_id, **kwargs)
+    _llama_model = MllamaForConditionalGeneration.from_pretrained(
+        settings.llama32_model_id,
+        torch_dtype=torch.bfloat16 if device == "cuda" else torch.float32,
+        device_map=device,
+        **kwargs,
+    )
+    logger.info("Llama-3.2-11B-Vision loaded on %s", _gpu_label)
+
+
+# ---------------------------------------------------------------------------
+# Mock diseases — deterministic by image hash
+# ---------------------------------------------------------------------------
 
 _MOCK_DISEASES = [
     {
@@ -76,8 +113,6 @@ _MOCK_DISEASES = [
 
 def _mock_infer(image_b64: str) -> dict:
     global _last_inference_ms
-    # Deterministic: same image always returns same disease
-    # Use first 256 bytes of decoded image as hash seed
     try:
         image_bytes = base64.b64decode(image_b64 + "==")[:256]
     except Exception:
@@ -88,47 +123,89 @@ def _mock_infer(image_b64: str) -> dict:
     time.sleep(1.4)  # simulate MI300X inference latency
     _last_inference_ms = (time.time() - t0) * 1000
 
-    return _MOCK_DISEASES[idx] | {"gpu_used": "mock (no AMD MI300X detected)"}
+    model_label = (
+        "Llama-3.2-11B-Vision-Instruct" if settings.vision_model == "llama32"
+        else "LLaVA-v1.5-7B"
+    )
+    return _MOCK_DISEASES[idx] | {"gpu_used": f"mock ({model_label} — no AMD MI300X)"}
 
 
-def _real_infer(image_b64: str) -> dict:
+# ---------------------------------------------------------------------------
+# Real inference — LLaVA-v1.5
+# ---------------------------------------------------------------------------
+
+def _real_infer_llava(image_b64: str) -> dict:
     import torch
     from PIL import Image
 
-    _load_model()
+    _load_llava()
 
-    image_bytes = base64.b64decode(image_b64)
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
+    image = Image.open(io.BytesIO(base64.b64decode(image_b64))).convert("RGB")
     prompt = (
         "<image>\nYou are an expert plant pathologist. "
         "Identify the disease visible in this crop leaf image. "
         "Return: disease name, visible symptoms, and severity (low/medium/high)."
     )
-
-    inputs = _processor(prompt, image, return_tensors="pt").to(_model.device)
+    inputs = _llava_processor(prompt, image, return_tensors="pt").to(_llava_model.device)
 
     t0 = time.time()
     with torch.no_grad():
-        output = _model.generate(**inputs, max_new_tokens=256, temperature=0.1)
+        output = _llava_model.generate(**inputs, max_new_tokens=256, temperature=0.1)
     global _last_inference_ms
     _last_inference_ms = (time.time() - t0) * 1000
-    elapsed = _last_inference_ms / 1000
 
-    raw = _processor.decode(output[0], skip_special_tokens=True)
-    # Parse structured fields from model output
-    disease_name = _extract_field(raw, "disease") or "Unknown Disease"
-    symptoms = _extract_field(raw, "symptoms") or raw[:200]
-    severity = _extract_severity(raw)
-    confidence = _estimate_confidence(raw)
+    raw = _llava_processor.decode(output[0], skip_special_tokens=True)
+    logger.info("LLaVA inference done in %.2fs on %s", _last_inference_ms / 1000, _gpu_label)
+    return _build_result(raw, "LLaVA-v1.5-7B")
 
-    print(f"[AgriSync] Inference done in {elapsed:.2f}s on {_gpu_label}")
+
+# ---------------------------------------------------------------------------
+# Real inference — Llama 3.2 Vision (Track 3 primary)
+# ---------------------------------------------------------------------------
+
+def _real_infer_llama32(image_b64: str) -> dict:
+    import torch
+    from PIL import Image
+
+    _load_llama32()
+
+    image = Image.open(io.BytesIO(base64.b64decode(image_b64))).convert("RGB")
+
+    messages = [
+        {"role": "user", "content": [
+            {"type": "image"},
+            {"type": "text", "text": (
+                "You are an expert plant pathologist. Analyze this crop leaf image carefully. "
+                "Identify: 1) Disease name, 2) Visible symptoms, 3) Severity (low/medium/high). "
+                "Be specific and concise."
+            )},
+        ]}
+    ]
+    input_text = _llama_processor.apply_chat_template(messages, add_generation_prompt=True)
+    inputs = _llama_processor(image, input_text, return_tensors="pt").to(_llama_model.device)
+
+    t0 = time.time()
+    with torch.no_grad():
+        output = _llama_model.generate(**inputs, max_new_tokens=300, temperature=0.1)
+    global _last_inference_ms
+    _last_inference_ms = (time.time() - t0) * 1000
+
+    raw = _llama_processor.decode(output[0], skip_special_tokens=True)
+    logger.info("Llama-3.2-Vision inference done in %.2fs on %s", _last_inference_ms / 1000, _gpu_label)
+    return _build_result(raw, "Llama-3.2-11B-Vision-Instruct")
+
+
+# ---------------------------------------------------------------------------
+# Shared output parser
+# ---------------------------------------------------------------------------
+
+def _build_result(raw: str, model_tag: str) -> dict:
     return {
-        "disease_name": disease_name,
-        "confidence": confidence,
-        "symptoms": symptoms,
-        "severity": severity,
-        "gpu_used": _gpu_label,
+        "disease_name": _extract_field(raw, "disease") or "Unknown Disease",
+        "confidence": _estimate_confidence(raw),
+        "symptoms": _extract_field(raw, "symptoms") or raw[:200],
+        "severity": _extract_severity(raw),
+        "gpu_used": f"{_gpu_label} ({model_tag})",
     }
 
 
@@ -164,7 +241,13 @@ def _estimate_confidence(text: str) -> float:
     return 0.82
 
 
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
 def run_inference(image_b64: str) -> dict:
     if settings.use_mock_vision:
         return _mock_infer(image_b64)
-    return _real_infer(image_b64)
+    if settings.vision_model == "llama32":
+        return _real_infer_llama32(image_b64)
+    return _real_infer_llava(image_b64)

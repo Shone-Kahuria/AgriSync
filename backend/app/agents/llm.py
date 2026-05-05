@@ -9,8 +9,11 @@ Real mode : HuggingFaceAgriSyncLLM — Mistral-7B-Instruct on AMD MI300X via ROC
 """
 from __future__ import annotations
 
+import logging
 from typing import Any
 from pydantic import Field, model_validator
+
+logger = logging.getLogger("agrisync.llm")
 
 from crewai.llms.base_llm import BaseLLM
 from app.config import settings
@@ -171,7 +174,7 @@ def _get_hf_pipeline():
     import torch
     from transformers import pipeline as hf_pipeline
 
-    print("[AgriSync] Loading Mistral-7B for CrewAI agents on AMD MI300X...")
+    logger.info("Loading Mistral-7B for CrewAI agents on AMD MI300X...")
     _hf_pipeline = hf_pipeline(
         "text-generation",
         model=settings.mistral_model_id,
@@ -181,7 +184,7 @@ def _get_hf_pipeline():
         temperature=0.3,
         do_sample=True,
     )
-    print("[AgriSync] Mistral-7B loaded.")
+    logger.info("Mistral-7B loaded.")
     return _hf_pipeline
 
 

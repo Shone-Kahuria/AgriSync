@@ -1,11 +1,14 @@
 """
 Orchestrator — delegates to the AgriSync CrewAI crew and handles SMS dispatch.
 """
+import logging
 from typing import Optional
 
 from app.agents.crew import run_crew
 from app.config import settings
 from app.schemas.models import DiagnoseResponse, ArbitrageResponse, ReportResponse
+
+logger = logging.getLogger("agrisync.orchestrator")
 
 
 async def run_orchestrator(
@@ -31,12 +34,12 @@ async def run_orchestrator(
 
 async def _send_sms(phone: str, message: str):
     if not settings.africas_talking_api_key:
-        print(f"[AgriSync] SMS (mock) to {phone}: {message}")
+        logger.info("SMS (mock) to %s: %s", phone, message)
         return
     try:
         import africastalking
         africastalking.initialize(settings.africas_talking_username, settings.africas_talking_api_key)
         africastalking.SMS.send(message, [phone])
-        print(f"[AgriSync] SMS sent to {phone}.")
+        logger.info("SMS sent to %s", phone)
     except Exception as exc:
-        print(f"[AgriSync] SMS error: {exc}")
+        logger.error("SMS error: %s", exc)

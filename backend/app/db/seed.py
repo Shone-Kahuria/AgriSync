@@ -4,7 +4,10 @@ Safe to run multiple times — skips records that already exist.
 Run: `python -m app.db.seed`
 """
 import asyncio
+import logging
 from sqlalchemy import select
+
+logger = logging.getLogger("agrisync.seed")
 from app.db.database import engine, AsyncSessionLocal
 from app.db.models import Base, Market, Crop, CropPrice, MarketDistance, Disease, Chemical, DiseaseChemical
 
@@ -80,7 +83,7 @@ async def seed():
         # Skip if already seeded
         existing = await db.execute(select(Market))
         if existing.scalars().first():
-            print("✓ Database already seeded — skipping.")
+            logger.info("Database already seeded — skipping.")
             return
 
         market_map = {}
@@ -134,7 +137,7 @@ async def seed():
                 ))
 
         await db.commit()
-        print("✓ Database seeded with Kenyan mock data.")
+        logger.info("Database seeded with Kenyan mock data.")
 
 
 if __name__ == "__main__":

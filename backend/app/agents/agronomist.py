@@ -3,6 +3,8 @@ Agronomist Agent
 Input : vision inference result + disease name
 Output: list of chemical recommendations with stock status
 """
+import asyncio
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -13,7 +15,8 @@ from app.vision.inference import run_inference
 
 
 async def run_agronomist(image_b64: str, db: AsyncSession) -> DiagnoseResponse:
-    vision_result = run_inference(image_b64)
+    # run_inference may block (time.sleep in mock, GPU in real) — keep event loop free
+    vision_result = await asyncio.to_thread(run_inference, image_b64)
     disease_name = vision_result["disease_name"]
 
     stmt = (
