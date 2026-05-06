@@ -67,6 +67,7 @@ async def full_pipeline(request: Request, req: AnalyzeRequest, db: AsyncSession 
             farmer_name=req.farmer_name,
             phone=req.phone,
             send_sms=bool(req.phone),
+            origin_city=req.origin_city,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Report generation failed: {exc}")

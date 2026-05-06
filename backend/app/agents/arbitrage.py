@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db.models import Crop, CropPrice, Market, MarketDistance
 from app.schemas.models import ArbitrageRequest, ArbitrageResponse, MarketPrice
+from app.services import price_service
 
 
 async def run_arbitrage(req: ArbitrageRequest, db: AsyncSession) -> ArbitrageResponse:
@@ -38,14 +39,17 @@ async def run_arbitrage(req: ArbitrageRequest, db: AsyncSession) -> ArbitrageRes
         distance_km = dist_obj.distance_km if dist_obj else 0
         transport_per_kg = dist_obj.transport_cost_per_kg_kes if dist_obj else 0
 
-        gross = cp.price_per_kg_kes * req.volume_kg
+        live_price, _source = await price_service.get_price(req.crop, city, db)
+        price_per_kg = live_price if live_price > 0 else cp.price_per_kg_kes
+
+        gross = price_per_kg * req.volume_kg
         transport_total = transport_per_kg * req.volume_kg
         net = gross - transport_total
 
         markets.append(MarketPrice(
             market=cp.market.name,
             city=city,
-            price_per_kg_kes=cp.price_per_kg_kes,
+            price_per_kg_kes=price_per_kg,
             distance_km=distance_km,
             transport_cost_kes=round(transport_total, 2),
             net_profit_kes=round(net, 2),

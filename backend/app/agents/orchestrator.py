@@ -17,9 +17,10 @@ async def run_orchestrator(
     farmer_name: Optional[str],
     phone: Optional[str],
     send_sms: bool,
+    origin_city: str = "Nakuru",
 ) -> ReportResponse:
     farmer = farmer_name or "Farmer"
-    english, swahili, sms = await run_crew(diag, arb, farmer)
+    english, swahili, sms = await run_crew(diag, arb, farmer, origin_city)
 
     if send_sms and phone:
         await _send_sms(phone, sms)

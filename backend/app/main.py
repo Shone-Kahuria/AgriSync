@@ -33,7 +33,7 @@ from app.auth import require_api_key
 from app.limiter import limiter
 from app.db.database import engine
 from app.db.models import Base
-from app.routers import diagnose, arbitrage, inventory, report, pipeline
+from app.routers import diagnose, arbitrage, inventory, report, pipeline, farmers, sms, catalog, feedback
 
 logger = logging.getLogger("agrisync")
 
@@ -42,6 +42,15 @@ logger = logging.getLogger("agrisync")
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    # Production safety: mock vision must be disabled in production
+    if settings.environment == "production" and settings.use_mock_vision:
+        logger.error(
+            "CRITICAL: USE_MOCK_VISION=true in production environment. "
+            "All diagnoses would be fake. Set USE_MOCK_VISION=false before deploying."
+        )
+        raise RuntimeError("Mock vision is enabled in production — refusing to start.")
+    if settings.environment == "production" and not settings.api_key:
+        logger.warning("WARNING: API_KEY is empty in production — all endpoints are unauthenticated.")
     yield
 
 
@@ -50,7 +59,6 @@ app = FastAPI(
     description="Agricultural intelligence platform — AMD MI300X × CrewAI × LLaVA-v1.5-7B",
     version="1.0.0",
     lifespan=lifespan,
-    dependencies=[Depends(require_api_key)],
 )
 
 app.state.limiter = limiter
@@ -65,11 +73,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(diagnose.router)
-app.include_router(arbitrage.router)
-app.include_router(inventory.router)
-app.include_router(report.router)
-app.include_router(pipeline.router)
+_auth = [Depends(require_api_key)]
+app.include_router(diagnose.router,   dependencies=_auth)
+app.include_router(arbitrage.router,  dependencies=_auth)
+app.include_router(inventory.router,  dependencies=_auth)
+app.include_router(report.router,     dependencies=_auth)
+app.include_router(pipeline.router,   dependencies=_auth)
+app.include_router(farmers.router,    dependencies=_auth)
+app.include_router(catalog.router,    dependencies=_auth)
+app.include_router(feedback.router,   dependencies=_auth)
+app.include_router(sms.router)  # public — AT webhook has no API key
 
 
 @app.get("/health")

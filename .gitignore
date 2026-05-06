@@ -11,3 +11,4 @@ dist/
 *.db
 hf_models/
 Hackathon Readiness for AgriSync.pdf
+tasks/

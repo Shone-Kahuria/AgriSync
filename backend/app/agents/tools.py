@@ -71,11 +71,12 @@ class MarketPriceTool(BaseTool):
     name: str = "Market Price Lookup"
     description: str = (
         "Fetch current crop prices (KES/kg) across Kenyan markets with net profit "
-        "calculations after transport costs from Nakuru. "
-        "Input: crop name — one of: Tomato, Maize, Beans, Potato. "
+        "calculations after transport costs from the farmer's origin city. "
+        "Input: crop name (e.g. Maize, Tomato, Beans, Potato, Cassava, Coffee, Kale). "
         "Returns price, transport cost, net profit per kg, and distance for each market, "
         "ranked best-to-worst."
     )
+    origin_city: str = "Nakuru"
 
     def _run(self, crop: str) -> str:
         try:
@@ -83,17 +84,17 @@ class MarketPriceTool(BaseTool):
                 rows = conn.execute(sa.text("""
                     SELECT m.city, m.name AS market_name,
                            cp.price_per_kg_kes,
-                           COALESCE(md.distance_km, 0)                    AS distance_km,
-                           COALESCE(md.transport_cost_per_kg_kes, 0)      AS transport_cost
+                           COALESCE(md.distance_km, 0)               AS distance_km,
+                           COALESCE(md.transport_cost_per_kg_kes, 0) AS transport_cost
                     FROM crop_prices cp
-                    JOIN crops c    ON c.id  = cp.crop_id
-                    JOIN markets m  ON m.id  = cp.market_id
+                    JOIN crops c   ON c.id  = cp.crop_id
+                    JOIN markets m ON m.id  = cp.market_id
                     LEFT JOIN market_distances md
-                           ON md.market_id = m.id AND md.origin_city = 'Nakuru'
+                           ON md.market_id = m.id AND md.origin_city = :origin
                     WHERE c.name = :crop
                     ORDER BY (cp.price_per_kg_kes
                               - COALESCE(md.transport_cost_per_kg_kes, 0)) DESC
-                """), {"crop": crop}).fetchall()
+                """), {"crop": crop, "origin": self.origin_city}).fetchall()
         except Exception as exc:
             logger.warning("MarketPriceTool DB error: %s", exc)
             return f"Database unavailable — cannot fetch live prices for {crop}."
@@ -101,7 +102,7 @@ class MarketPriceTool(BaseTool):
         if not rows:
             return f"No price data found for '{crop}'. Check crop name spelling."
 
-        lines = [f"Live market prices for {crop} (origin: Nakuru):"]
+        lines = [f"Live market prices for {crop} (origin: {self.origin_city}):"]
         for city, market_name, price, dist, transport in rows:
             net = price - transport
             lines.append(

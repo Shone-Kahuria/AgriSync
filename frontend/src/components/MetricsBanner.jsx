@@ -18,10 +18,10 @@ export default function MetricsBanner() {
 }
 
 const METRICS = [
-  { value: "KES 4,000",  label: "saved per market trip",      source: "Kenya MoA 2023" },
+  { value: "KES 4,000",  label: "saved per market trip",      source: "Kenya MoA 2025" },
   { value: "24 hrs",     label: "faster agronomist access",   source: "WHO rural data" },
-  { value: "8",          label: "diseases detected",          source: "LLaVA-v1.5-7B"  },
-  { value: "4",          label: "markets compared live",      source: "KACE prices"    },
+  { value: "50+",        label: "diseases detected",          source: "LLaVA-v1.5-7B"  },
+  { value: "12",         label: "markets compared live",      source: "KACE/WFP prices" },
 ];
 
 const styles = {

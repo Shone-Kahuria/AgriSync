@@ -1,16 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ResultCard from "../components/ResultCard";
-import { getReport } from "../api/client";
+import { getReport, registerFarmer, getFarmerHistory } from "../api/client";
 
 export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
-  const [farmerName, setFarmerName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [farmerName, setFarmerName] = useState(() => localStorage.getItem("agrisync_name") || "");
+  const [phone, setPhone] = useState(() => localStorage.getItem("agrisync_phone") || "");
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
+  const [history, setHistory] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const hasData = diagnoseResult || arbitrageResult;
+
+  function handleNameChange(val) {
+    setFarmerName(val);
+    localStorage.setItem("agrisync_name", val);
+  }
+
+  function handlePhoneChange(val) {
+    setPhone(val);
+    localStorage.setItem("agrisync_phone", val);
+  }
 
   async function handleGenerate() {
     setError(null);
@@ -18,10 +30,27 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
     try {
       const data = await getReport(diagnoseResult, arbitrageResult, farmerName, phone || null);
       setReport(data);
+      if (phone) {
+        registerFarmer(phone, farmerName || null, null, null).catch(() => {});
+      }
     } catch (e) {
       setError("Could not generate report — please try again.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleViewHistory() {
+    if (!phone) return;
+    setHistoryLoading(true);
+    setHistory(null);
+    try {
+      const data = await getFarmerHistory(phone);
+      setHistory(data);
+    } catch (e) {
+      setHistory({ error: "No history found for this number." });
+    } finally {
+      setHistoryLoading(false);
     }
   }
 
@@ -56,7 +85,7 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
             <label style={styles.label}>Farmer name (optional)</label>
             <input
               style={styles.input} placeholder="e.g. Wanjiku Kamau"
-              value={farmerName} onChange={(e) => setFarmerName(e.target.value)}
+              value={farmerName} onChange={(e) => handleNameChange(e.target.value)}
             />
           </div>
 
@@ -64,7 +93,7 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
             <label style={styles.label}>Phone for SMS (optional)</label>
             <input
               style={styles.input} placeholder="+254 7XX XXX XXX" type="tel"
-              value={phone} onChange={(e) => setPhone(e.target.value)}
+              value={phone} onChange={(e) => handlePhoneChange(e.target.value)}
             />
             <span style={styles.hint}>Sends via Africa's Talking API (Swahili SMS)</span>
           </div>
@@ -74,7 +103,37 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
           <button style={styles.genBtn} onClick={handleGenerate} disabled={loading}>
             Generate Report
           </button>
+
+          {phone && (
+            <button style={styles.historyBtn} onClick={handleViewHistory} disabled={historyLoading}>
+              {historyLoading ? "Loading…" : "View History"}
+            </button>
+          )}
         </div>
+      )}
+
+      {history && (
+        <ResultCard title="Your History" accent="#7c3aed">
+          {history.error ? (
+            <p style={styles.historyEmpty}>{history.error}</p>
+          ) : (
+            <>
+              <p style={styles.historyMeta}>
+                {history.farmer?.name || "Farmer"} · {history.total_diagnoses} diagnoses · {history.total_market_queries} market queries
+              </p>
+              {history.recent_diagnoses?.slice(0, 3).map((d, i) => (
+                <p key={i} style={styles.historyItem}>
+                  {d.disease_name} — {Math.round(d.confidence * 100)}% conf — {d.crop_type || "crop"}
+                </p>
+              ))}
+              {history.recent_market_queries?.slice(0, 3).map((m, i) => (
+                <p key={i} style={styles.historyItem}>
+                  {m.crop} → {m.best_market_recommended} · KES {m.net_profit_kes?.toLocaleString()}/kg
+                </p>
+              ))}
+            </>
+          )}
+        </ResultCard>
       )}
 
       {loading && <LoadingSpinner label="Orchestrating bilingual report with Mistral-7B…" />}
@@ -140,4 +199,12 @@ const styles = {
     padding: "10px 20px", borderRadius: 8, background: "none",
     border: "1px solid #d1d5db", fontSize: 13, color: "#6b7280", cursor: "pointer",
   },
+  historyBtn: {
+    padding: "10px 0", borderRadius: 8, background: "none",
+    border: "1px solid #7c3aed", fontSize: 13, color: "#7c3aed",
+    fontWeight: 500, cursor: "pointer",
+  },
+  historyMeta: { fontSize: 12, color: "#6b7280", margin: "0 0 8px", fontWeight: 500 },
+  historyItem: { fontSize: 13, color: "#374151", margin: "2px 0", lineHeight: 1.4 },
+  historyEmpty: { fontSize: 13, color: "#9ca3af", margin: 0 },
 };

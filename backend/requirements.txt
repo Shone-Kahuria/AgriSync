@@ -25,5 +25,5 @@ langchain-community>=0.2.0
 # SMS
 africastalking>=1.0.0
 
-# Dev / test
+# HTTP client (WFP price API)
 httpx>=0.27.0

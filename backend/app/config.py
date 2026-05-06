@@ -23,6 +23,16 @@ class Settings(BaseSettings):
     api_key: str = ""
     # CORS — comma-separated allowed origins; "*" allows all (dev/demo)
     frontend_url: str = "*"
+    # Price service
+    wfp_api_key: str = ""               # optional — WFP public API works without a key
+    price_cache_ttl_hours: int = 6
+    # Vision confidence — diagnoses below this threshold return uncertain=True
+    confidence_threshold: float = 0.50
+    # PlantVillage specialist classifier (runs before LLaVA; much faster + more accurate)
+    classifier_model_id: str = "linkanjarad/mobilenet_v2_1.0_224-fine-tuned-plant-disease-classification"
+    classifier_confidence_threshold: float = 0.65
+    # Deployment environment — blocks mock mode when set to "production"
+    environment: str = "development"
 
     class Config:
         env_file = ".env"

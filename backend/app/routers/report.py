@@ -16,6 +16,7 @@ async def generate_report(request: Request, req: ReportRequest):
             farmer_name=req.farmer_name,
             phone=req.phone,
             send_sms=bool(req.phone),
+            origin_city=req.origin_city or "Nakuru",
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))

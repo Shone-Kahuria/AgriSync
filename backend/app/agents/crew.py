@@ -29,11 +29,12 @@ def _build_and_run(
     diag: Optional[DiagnoseResponse],
     arb: Optional[ArbitrageResponse],
     farmer: str,
+    origin_city: str = "Nakuru",
 ) -> tuple[str, str, str]:
     """Build and run the AgriSync crew. Returns (english, swahili, sms)."""
 
     treatment_tool = TreatmentProtocolTool()
-    market_tool = MarketPriceTool()
+    market_tool = MarketPriceTool(origin_city=origin_city)
 
     # ---- Pre-call tools to embed live data in task descriptions ----
     # This ensures data-rich context even when the mock LLM is active.
@@ -155,7 +156,7 @@ def _build_and_run(
     )
 
     market_summary = (
-        f"Crop: {arb.crop}, volume: {arb.volume_kg} kg, origin: Nakuru."
+        f"Crop: {arb.crop}, volume: {arb.volume_kg} kg, origin: {origin_city}."
         if arb else "No market data available."
     )
 
@@ -332,6 +333,7 @@ async def run_crew(
     diag: Optional[DiagnoseResponse],
     arb: Optional[ArbitrageResponse],
     farmer: str,
+    origin_city: str = "Nakuru",
 ) -> tuple[str, str, str]:
     """Run the AgriSync CrewAI pipeline in a thread to avoid blocking the event loop."""
-    return await asyncio.to_thread(_build_and_run, diag, arb, farmer)
+    return await asyncio.to_thread(_build_and_run, diag, arb, farmer, origin_city)

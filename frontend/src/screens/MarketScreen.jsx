@@ -1,18 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ResultCard from "../components/ResultCard";
-import { arbitrage } from "../api/client";
+import { arbitrage, getCrops } from "../api/client";
 
-const CROPS = ["Maize", "Tomato", "Beans", "Potato"];
-const CITIES = ["Nakuru", "Nairobi", "Kisumu"];
+const FALLBACK_CROPS = [
+  "Maize", "Tomato", "Beans", "Potato", "Cassava", "Coffee",
+  "Kale", "Sweet Potato", "Sorghum", "Banana", "Wheat", "Onion",
+];
+const CITIES = [
+  "Nakuru", "Nairobi", "Kisumu", "Eldoret",
+  "Meru", "Nyeri", "Kakamega", "Kitale",
+];
 
 export default function MarketScreen({ onResult }) {
+  const [crops, setCrops] = useState(FALLBACK_CROPS);
   const [crop, setCrop] = useState("Maize");
   const [volume, setVolume] = useState("");
   const [origin, setOrigin] = useState("Nakuru");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    getCrops()
+      .then((data) => {
+        if (data?.length) setCrops(data.map((c) => c.name));
+      })
+      .catch(() => {}); // silent — fallback list already in state
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -43,7 +58,7 @@ export default function MarketScreen({ onResult }) {
         <div style={styles.field}>
           <label style={styles.label}>Crop</label>
           <select style={styles.select} value={crop} onChange={(e) => setCrop(e.target.value)}>
-            {CROPS.map((c) => <option key={c}>{c}</option>)}
+            {crops.map((c) => <option key={c}>{c}</option>)}
           </select>
         </div>
 
