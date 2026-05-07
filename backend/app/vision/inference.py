@@ -11,6 +11,8 @@ import hashlib
 import io
 import logging
 import time
+import asyncio
+from collections import deque
 from typing import Optional
 
 from app.config import settings
@@ -19,6 +21,8 @@ logger = logging.getLogger("agrisync.vision")
 
 # ---- shared state ----
 _last_inference_ms: float = 0.0
+_inference_count: int = 0
+_recent_inference_ms = deque(maxlen=50)
 _gpu_label: str = "mock"
 
 # ---- LLaVA-v1.5 state ----
@@ -32,6 +36,27 @@ _llama_processor = None
 
 def last_inference_ms() -> float:
     return _last_inference_ms
+
+
+def record_inference(elapsed_ms: float) -> None:
+    global _last_inference_ms, _inference_count
+    _last_inference_ms = elapsed_ms
+    _inference_count += 1
+    _recent_inference_ms.append(elapsed_ms)
+
+
+def inference_count() -> int:
+    return _inference_count
+
+
+def avg_inference_ms() -> float:
+    if not _recent_inference_ms:
+        return 0.0
+    return sum(_recent_inference_ms) / len(_recent_inference_ms)
+
+
+def model_loaded() -> bool:
+    return _llava_model is not None or _llama_model is not None
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +137,6 @@ _MOCK_DISEASES = [
 
 
 def _mock_infer(image_b64: str) -> dict:
-    global _last_inference_ms
     try:
         image_bytes = base64.b64decode(image_b64 + "==")[:256]
     except Exception:
@@ -121,7 +145,7 @@ def _mock_infer(image_b64: str) -> dict:
 
     t0 = time.time()
     time.sleep(1.4)  # simulate MI300X inference latency
-    _last_inference_ms = (time.time() - t0) * 1000
+    record_inference((time.time() - t0) * 1000)
 
     model_label = (
         "Llama-3.2-11B-Vision-Instruct" if settings.vision_model == "llama32"
@@ -151,11 +175,11 @@ def _real_infer_llava(image_b64: str) -> dict:
     t0 = time.time()
     with torch.no_grad():
         output = _llava_model.generate(**inputs, max_new_tokens=256, temperature=0.1)
-    global _last_inference_ms
-    _last_inference_ms = (time.time() - t0) * 1000
+    elapsed_ms = (time.time() - t0) * 1000
+    record_inference(elapsed_ms)
 
     raw = _llava_processor.decode(output[0], skip_special_tokens=True)
-    logger.info("LLaVA inference done in %.2fs on %s", _last_inference_ms / 1000, _gpu_label)
+    logger.info("LLaVA inference done in %.2fs on %s", elapsed_ms / 1000, _gpu_label)
     return _build_result(raw, "LLaVA-v1.5-7B")
 
 
@@ -187,11 +211,11 @@ def _real_infer_llama32(image_b64: str) -> dict:
     t0 = time.time()
     with torch.no_grad():
         output = _llama_model.generate(**inputs, max_new_tokens=300, temperature=0.1)
-    global _last_inference_ms
-    _last_inference_ms = (time.time() - t0) * 1000
+    elapsed_ms = (time.time() - t0) * 1000
+    record_inference(elapsed_ms)
 
     raw = _llama_processor.decode(output[0], skip_special_tokens=True)
-    logger.info("Llama-3.2-Vision inference done in %.2fs on %s", _last_inference_ms / 1000, _gpu_label)
+    logger.info("Llama-3.2-Vision inference done in %.2fs on %s", elapsed_ms / 1000, _gpu_label)
     return _build_result(raw, "Llama-3.2-11B-Vision-Instruct")
 
 
@@ -251,3 +275,17 @@ def run_inference(image_b64: str) -> dict:
     if settings.vision_model == "llama32":
         return _real_infer_llama32(image_b64)
     return _real_infer_llava(image_b64)
+
+
+async def warmup() -> None:
+    if settings.use_mock_vision:
+        logger.info("Skipping vision model warmup in mock mode")
+        return
+
+    blank_png_b64 = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8"
+        "/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+    )
+    started = time.perf_counter()
+    await asyncio.to_thread(run_inference, blank_png_b64)
+    logger.info("Vision model warmed up in %.2fs", time.perf_counter() - started)

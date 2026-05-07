@@ -85,8 +85,10 @@ AMD-relevant components:
 
 - AMD MI300X target hardware for multimodal and LLM inference.
 - ROCm PyTorch build for GPU acceleration.
-- `/gpu-info` endpoint to expose detected backend, device name, memory, utilization, and last inference latency.
+- `/gpu-info` endpoint to expose detected backend, device name, memory, utilization, inference count, rolling latency, model-loaded state, and ROCm version when available.
 - Vision inference path using `torch.cuda.is_available()` under ROCm, where AMD GPUs are exposed through the CUDA-compatible PyTorch API.
+- Real vision warmup during FastAPI startup when `USE_MOCK_VISION=false`.
+- `backend/benchmark.py` for mock, real GPU, classifier, and combined pipeline latency numbers.
 - Model cache volume in Docker for Hugging Face downloads.
 
 Local development defaults to mock mode so judges and contributors can run the product without GPU access. Hackathon evaluation should use `USE_MOCK_VISION=false` on an AMD GPU node.
@@ -241,6 +243,19 @@ On an AMD Developer Cloud node:
    curl http://localhost:8000/gpu-info
    ```
 
+6. Run benchmark outputs for slides.
+
+   ```bash
+   cd backend
+   python benchmark.py --mode mock
+   python benchmark.py --mode real
+   python benchmark.py --mode both
+   python benchmark.py --mode classifier
+   ```
+
+   Results are saved to `tasks/benchmark_results.json`. Real hardware notes and
+   command output should be recorded in `tasks/AMD_SETUP_VERIFIED.md`.
+
 Expected real-mode signal:
 
 ```json
@@ -248,7 +263,11 @@ Expected real-mode signal:
   "backend": "ROCm",
   "gpu": "...",
   "memory_gb": 192,
-  "utilization_pct": 0
+  "utilization_pct": 0,
+  "inference_count": 1,
+  "avg_inference_ms": 340.0,
+  "model_loaded": true,
+  "rocm_version": "..."
 }
 ```
 

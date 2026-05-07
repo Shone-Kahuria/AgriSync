@@ -34,6 +34,7 @@ from app.limiter import limiter
 from app.db.database import engine
 from app.db.models import Base
 from app.routers import diagnose, arbitrage, inventory, report, pipeline, farmers, sms, catalog, feedback
+from app.schemas.models import GpuInfoResponse
 
 logger = logging.getLogger("agrisync")
 
@@ -51,6 +52,10 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("Mock vision is enabled in production — refusing to start.")
     if settings.environment == "production" and not settings.api_key:
         logger.warning("WARNING: API_KEY is empty in production — all endpoints are unauthenticated.")
+    if not settings.use_mock_vision:
+        from app.vision.inference import warmup
+
+        await warmup()
     yield
 
 
@@ -90,15 +95,25 @@ async def health():
     return {"status": "ok", "service": "AgriSync API", "version": "1.0.0"}
 
 
-@app.get("/gpu-info")
+@app.get("/gpu-info", response_model=GpuInfoResponse)
 @limiter.limit("60/minute")
 async def gpu_info(request: Request):
-    from app.vision.inference import last_inference_ms
+    from app.vision.inference import (
+        avg_inference_ms,
+        inference_count,
+        last_inference_ms,
+        model_loaded,
+    )
     info = {
         "gpu": "none",
         "memory_gb": 0,
         "backend": "cpu (mock mode active)",
         "last_inference_ms": round(last_inference_ms(), 1),
+        "utilization_pct": 0,
+        "inference_count": inference_count(),
+        "avg_inference_ms": round(avg_inference_ms(), 1),
+        "model_loaded": model_loaded(),
+        "rocm_version": await asyncio.to_thread(_rocm_version),
     }
     try:
         import torch
@@ -130,3 +145,40 @@ def _rocm_util() -> int:
     except Exception:
         pass
     return 0
+
+
+def _rocm_version() -> str | None:
+    """Return ROCm version if available, otherwise None."""
+    import os
+
+    version = os.getenv("ROCM_VERSION")
+    if version:
+        return version
+
+    try:
+        import subprocess
+
+        out = subprocess.check_output(
+            ["rocm-smi", "--showdriverversion", "--csv"],
+            timeout=2,
+            text=True,
+        )
+        for line in out.splitlines():
+            if "Driver version" in line:
+                parts = [part.strip() for part in line.split(",") if part.strip()]
+                if parts:
+                    return parts[-1]
+    except Exception:
+        pass
+
+    try:
+        import subprocess
+
+        out = subprocess.check_output(["rocminfo"], timeout=2, text=True)
+        for line in out.splitlines():
+            if "ROCm Version" in line:
+                return line.split(":", 1)[-1].strip() or None
+    except Exception:
+        pass
+
+    return None

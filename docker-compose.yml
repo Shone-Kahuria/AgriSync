@@ -23,11 +23,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # AMD MI300X passthrough — uncomment on AMD Developer Cloud node:
-    # devices:
-    #   - driver: amdgpu
-    #     count: 1
-    #     capabilities: [gpu, compute]
+    # AMD MI300X passthrough for AMD Developer Cloud node:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: amdgpu
+              count: 1
+              capabilities: [gpu, compute]
     volumes:
       - ./backend:/app
       - hf_cache:/root/.cache/huggingface

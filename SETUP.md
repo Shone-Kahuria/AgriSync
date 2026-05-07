@@ -31,8 +31,20 @@ docker compose up --build
 
 1. Edit `backend/.env`: set `USE_MOCK_VISION=false`
 2. Install ROCm PyTorch: `pip install torch --index-url https://download.pytorch.org/whl/rocm6.0`
-3. Uncomment the `devices:` block in `docker-compose.yml`
-4. Run `rocminfo` to confirm GPU visibility before starting
+3. Run `rocminfo` to confirm GPU visibility before starting
+4. Start the API and verify `curl http://localhost:8000/gpu-info`
+5. Run benchmark outputs for the presentation:
+
+```bash
+cd backend
+python benchmark.py --mode mock
+python benchmark.py --mode real
+python benchmark.py --mode both
+python benchmark.py --mode classifier
+```
+
+Benchmark output is saved to `tasks/benchmark_results.json`.
+Real AMD setup notes should be recorded in `tasks/AMD_SETUP_VERIFIED.md`.
 
 Models will be auto-downloaded from HuggingFace on first inference:
 - `YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection`

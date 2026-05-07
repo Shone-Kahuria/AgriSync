@@ -101,6 +101,18 @@ class ReportResponse(BaseModel):
     send_sms: bool
 
 
+class GpuInfoResponse(BaseModel):
+    gpu: str
+    memory_gb: int
+    backend: str
+    last_inference_ms: float
+    utilization_pct: int = 0
+    inference_count: int = 0
+    avg_inference_ms: float = 0.0
+    model_loaded: bool = False
+    rocm_version: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Farmer schemas
 # ---------------------------------------------------------------------------
