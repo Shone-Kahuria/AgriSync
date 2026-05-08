@@ -18,6 +18,9 @@ services:
   backend:
     build: ./backend
     env_file: ./backend/.env
+    environment:
+      ROCM_VISIBLE_DEVICES: ${ROCM_VISIBLE_DEVICES:-0}
+      HIP_VISIBLE_DEVICES: ${ROCM_VISIBLE_DEVICES:-0}
     ports:
       - "8000:8000"
     depends_on:

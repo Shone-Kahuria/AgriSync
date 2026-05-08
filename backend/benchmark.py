@@ -92,7 +92,18 @@ def benchmark_mock_vision_stage() -> dict:
 
 
 def benchmark_classifier() -> dict:
-    return _run_samples("PlantVillage classifier", lambda: classify_disease(BLANK_PNG_B64))
+    warmup_result = classify_disease(BLANK_PNG_B64)
+    if warmup_result.get("gpu_used") in {"classifier unavailable", "classifier error"}:
+        return {
+            "mode": "PlantVillage classifier",
+            "runs": 0,
+            "mean_ms": None,
+            "p50_ms": None,
+            "p95_ms": None,
+            "p99_ms": None,
+            "status": warmup_result["gpu_used"],
+        }
+    return _run_samples("PlantVillage classifier", lambda: classify_disease(BLANK_PNG_B64), warmup=False)
 
 
 def benchmark_combined(use_real_fallback: bool) -> dict | None:
@@ -117,11 +128,17 @@ def _print_table(rows: list[dict]) -> None:
     for row in rows:
         print(
             f"{row['mode'][:24]:<24} | "
-            f"{row['mean_ms']:>9.1f} | "
-            f"{row['p50_ms']:>5.1f} | "
-            f"{row['p95_ms']:>5.1f} | "
-            f"{row['p99_ms']:>4.1f}"
+            f"{_fmt_ms(row['mean_ms'], 9)} | "
+            f"{_fmt_ms(row['p50_ms'], 5)} | "
+            f"{_fmt_ms(row['p95_ms'], 5)} | "
+            f"{_fmt_ms(row['p99_ms'], 4)}"
         )
+
+
+def _fmt_ms(value: float | None, width: int) -> str:
+    if value is None:
+        return "n/a".rjust(width)
+    return f"{value:>{width}.1f}"
 
 
 def _save_results(rows: list[dict]) -> Path:
