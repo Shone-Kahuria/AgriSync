@@ -23,10 +23,8 @@ export default function MarketScreen({ onResult }) {
 
   useEffect(() => {
     getCrops()
-      .then((data) => {
-        if (data?.length) setCrops(data.map((c) => c.name));
-      })
-      .catch(() => {}); // silent — fallback list already in state
+      .then((data) => { if (data?.length) setCrops(data.map((c) => c.name)); })
+      .catch(() => {});
   }, []);
 
   async function handleSubmit(e) {
@@ -42,129 +40,311 @@ export default function MarketScreen({ onResult }) {
       const data = await arbitrage(crop, Number(volume), origin);
       setResult(data);
       onResult?.(data);
-    } catch (e) {
+    } catch {
       setError("Could not fetch market prices — please try again.");
     } finally {
       setLoading(false);
     }
   }
 
+  const maxProfit = result
+    ? Math.max(...result.markets.map((m) => m.net_profit_kes), 1)
+    : 1;
+
   return (
-    <div style={styles.screen}>
-      <h2 style={styles.heading}>Best Market Finder</h2>
-      <p style={styles.sub}>Enter your harvest to find the most profitable market</p>
+    <div style={s.screen}>
+      <div style={s.pageHeader}>
+        <h2 style={s.heading}>Best Market Finder</h2>
+        <p style={s.sub}>Find the most profitable market for your harvest</p>
+      </div>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <div style={styles.field}>
-          <label style={styles.label}>Crop</label>
-          <select style={styles.select} value={crop} onChange={(e) => setCrop(e.target.value)}>
-            {crops.map((c) => <option key={c}>{c}</option>)}
-          </select>
-        </div>
+      {/* Form card */}
+      <div style={s.formCard}>
+        <form onSubmit={handleSubmit} style={s.form}>
+          <div style={s.field}>
+            <label style={s.label}>🌾 Crop type</label>
+            <select
+              style={s.select}
+              value={crop}
+              onChange={(e) => setCrop(e.target.value)}
+            >
+              {crops.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          </div>
 
-        <div style={styles.field}>
-          <label style={styles.label}>Harvest volume (kg)</label>
-          <input
-            style={styles.input}
-            type="number" min="1" placeholder="e.g. 500"
-            value={volume} onChange={(e) => setVolume(e.target.value)}
-          />
-        </div>
+          <div style={s.fieldRow}>
+            <div style={{ ...s.field, flex: 1 }}>
+              <label style={s.label}>📦 Volume (kg)</label>
+              <input
+                style={s.input}
+                type="number"
+                min="1"
+                placeholder="e.g. 500"
+                value={volume}
+                onChange={(e) => setVolume(e.target.value)}
+              />
+            </div>
+            <div style={{ ...s.field, flex: 1 }}>
+              <label style={s.label}>📍 Your location</label>
+              <select
+                style={s.select}
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+              >
+                {CITIES.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
 
-        <div style={styles.field}>
-          <label style={styles.label}>Your location</label>
-          <select style={styles.select} value={origin} onChange={(e) => setOrigin(e.target.value)}>
-            {CITIES.map((c) => <option key={c}>{c}</option>)}
-          </select>
-        </div>
+          {error && (
+            <div style={s.errorBox}>
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
 
-        {error && <p style={styles.error}>{error}</p>}
-
-        <button type="submit" style={styles.submitBtn} disabled={loading}>
-          Find Best Market
-        </button>
-      </form>
+          <button type="submit" style={s.submitBtn} disabled={loading}>
+            {loading ? "Finding best market…" : "Find Best Market →"}
+          </button>
+        </form>
+      </div>
 
       {loading && <LoadingSpinner label="Calculating net profit per market…" />}
 
       {result && (
-        <>
-          <ResultCard title="Market Recommendation" accent="#15803d">
-            <p style={styles.bestMarket}>
-              Best: <strong>{result.best_market}</strong>
-            </p>
-            <p style={styles.extraProfit}>
-              KES {result.extra_profit_vs_worst_kes.toLocaleString()} more than worst option
-            </p>
+        <div style={s.results}>
+          {/* Best market highlight card */}
+          <div style={s.bestCard}>
+            <div style={s.bestInfo}>
+              <span style={s.bestEyebrow}>BEST MARKET</span>
+              <p style={s.bestCity}>{result.best_market}</p>
+              <p style={s.bestDiff}>
+                KES {result.extra_profit_vs_worst_kes.toLocaleString()} more
+                than the worst option
+              </p>
+            </div>
+            <span style={s.trophyEmoji}>🏆</span>
+          </div>
+
+          <ResultCard title="Kiswahili · Swahili" icon="🇰🇪" accent="#0d9488">
+            <p style={s.swahili}>{result.swahili_advice}</p>
           </ResultCard>
 
-          <ResultCard title="Swahili / Kiswahili" accent="#0d9488">
-            <p style={styles.swahili}>{result.swahili_advice}</p>
-          </ResultCard>
-
-          <ResultCard title="All Markets — Ranked">
+          <ResultCard title="Market Comparison" icon="📊" accent="#15803d">
             {result.markets.map((m, i) => (
               <div
                 key={m.city}
                 style={{
-                  ...styles.marketRow,
+                  ...s.marketRow,
                   background: m.recommended ? "#f0fdf4" : "transparent",
-                  borderRadius: m.recommended ? 8 : 0,
+                  borderRadius: m.recommended ? 10 : 0,
+                  marginBottom: i === result.markets.length - 1 ? 0 : 6,
                 }}
               >
-                <div style={styles.rank}>
-                  {m.recommended ? "🥇" : `#${i + 1}`}
+                <div style={s.rankCol}>
+                  {m.recommended ? (
+                    <span style={s.rankEmoji}>🥇</span>
+                  ) : (
+                    <span style={s.rankNum}>#{i + 1}</span>
+                  )}
                 </div>
-                <div style={styles.marketInfo}>
-                  <p style={styles.marketName}>{m.city}</p>
-                  <p style={styles.marketDetail}>{m.market}</p>
-                  <p style={styles.marketDetail}>{m.distance_km} km · transport KES {m.transport_cost_kes.toLocaleString()}</p>
-                </div>
-                <div style={styles.marketProfit}>
-                  <p style={{ ...styles.netProfit, color: m.recommended ? "#15803d" : "#374151" }}>
-                    KES {m.net_profit_kes.toLocaleString()}
+
+                <div style={s.marketData}>
+                  <div style={s.marketTopRow}>
+                    <p
+                      style={{
+                        ...s.marketCity,
+                        color: m.recommended ? "#15803d" : "#111827",
+                      }}
+                    >
+                      {m.city}
+                    </p>
+                    <p
+                      style={{
+                        ...s.netProfit,
+                        color: m.recommended ? "#15803d" : "#374151",
+                      }}
+                    >
+                      KES {m.net_profit_kes.toLocaleString()}
+                    </p>
+                  </div>
+                  <p style={s.marketMeta}>
+                    {m.market} · {m.distance_km} km · KES{" "}
+                    {m.transport_cost_kes.toLocaleString()} transport
                   </p>
-                  <p style={styles.priceLabel}>{m.price_per_kg_kes}/kg</p>
+                  {/* Profit bar */}
+                  <div style={s.barTrack}>
+                    <div
+                      style={{
+                        ...s.barFill,
+                        width: `${(m.net_profit_kes / maxProfit) * 100}%`,
+                        background: m.recommended
+                          ? "linear-gradient(90deg,#16a34a,#22c55e)"
+                          : "#d1d5db",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={s.perKgCol}>
+                  <span style={s.perKgValue}>{m.price_per_kg_kes}</span>
+                  <span style={s.perKgUnit}>/kg</span>
                 </div>
               </div>
             ))}
           </ResultCard>
-        </>
+        </div>
       )}
     </div>
   );
 }
 
-const styles = {
-  screen: { padding: "0 0 32px" },
-  heading: { fontSize: 20, fontWeight: 600, color: "#111827", margin: "0 0 4px" },
-  sub: { fontSize: 13, color: "#6b7280", margin: "0 0 18px" },
-  form: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 },
+const s = {
+  screen: { paddingBottom: 32 },
+
+  pageHeader: { marginBottom: 18 },
+  heading: {
+    fontSize: 22,
+    fontWeight: 800,
+    color: "#111827",
+    margin: "0 0 4px",
+    letterSpacing: "-0.025em",
+  },
+  sub: { fontSize: 13, color: "#6b7280", margin: 0 },
+
+  /* Form */
+  formCard: {
+    background: "#fff",
+    borderRadius: 16,
+    border: "1px solid #e5e7eb",
+    padding: "18px 16px",
+    marginBottom: 16,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 3px 10px rgba(0,0,0,0.03)",
+  },
+  form: { display: "flex", flexDirection: "column", gap: 14 },
+  fieldRow: { display: "flex", gap: 10 },
   field: { display: "flex", flexDirection: "column", gap: 5 },
-  label: { fontSize: 12, fontWeight: 500, color: "#374151" },
+  label: { fontSize: 12, fontWeight: 600, color: "#374151" },
   input: {
-    padding: "10px 12px", borderRadius: 8, border: "1px solid #d1d5db",
-    fontSize: 15, outline: "none",
+    padding: "11px 12px",
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    fontSize: 14,
+    outline: "none",
+    background: "#f9fafb",
+    transition: "border-color 0.15s",
+    WebkitAppearance: "none",
   },
   select: {
-    padding: "10px 12px", borderRadius: 8, border: "1px solid #d1d5db",
-    fontSize: 15, background: "#fff", outline: "none",
+    padding: "11px 12px",
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    fontSize: 14,
+    background: "#f9fafb",
+    outline: "none",
+    cursor: "pointer",
+    WebkitAppearance: "none",
+    appearance: "none",
   },
   submitBtn: {
-    padding: "12px 0", borderRadius: 10,
-    background: "#15803d", color: "#fff", border: "none",
-    fontSize: 15, fontWeight: 600, cursor: "pointer",
+    padding: "14px 0",
+    borderRadius: 12,
+    background: "linear-gradient(135deg,#15803d,#16a34a)",
+    color: "#fff",
+    border: "none",
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 4px 14px rgba(22,163,74,0.3)",
+    letterSpacing: "0.01em",
+    transition: "opacity 0.15s",
   },
-  error: { fontSize: 13, color: "#dc2626", background: "#fef2f2", borderRadius: 8, padding: "10px 14px" },
-  bestMarket: { fontSize: 18, color: "#111827", margin: "0 0 4px" },
-  extraProfit: { fontSize: 13, color: "#15803d", fontWeight: 600, margin: 0 },
-  swahili: { fontSize: 14, color: "#1f2937", lineHeight: 1.6, margin: 0, fontStyle: "italic" },
-  marketRow: { display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 8px" },
-  rank: { fontSize: 16, width: 26, flexShrink: 0, paddingTop: 2 },
-  marketInfo: { flex: 1 },
-  marketName: { fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 2px" },
-  marketDetail: { fontSize: 11, color: "#6b7280", margin: 0 },
-  marketProfit: { textAlign: "right", flexShrink: 0 },
-  netProfit: { fontSize: 14, fontWeight: 700, margin: "0 0 2px" },
-  priceLabel: { fontSize: 11, color: "#6b7280", margin: 0 },
+  errorBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 13,
+    color: "#dc2626",
+    background: "#fef2f2",
+    borderRadius: 10,
+    padding: "10px 14px",
+    border: "1px solid #fecaca",
+  },
+
+  results: { animation: "fadeUp 0.35s ease forwards" },
+
+  /* Best market highlight */
+  bestCard: {
+    background: "linear-gradient(135deg,#0f4024,#166534)",
+    borderRadius: 18,
+    padding: "20px 20px 18px",
+    marginBottom: 12,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    boxShadow: "0 6px 24px rgba(15,64,36,0.35)",
+  },
+  bestInfo: {},
+  bestEyebrow: {
+    display: "block",
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    color: "rgba(255,255,255,0.55)",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  bestCity: {
+    fontSize: 24,
+    fontWeight: 800,
+    color: "#fff",
+    margin: "0 0 5px",
+    letterSpacing: "-0.025em",
+  },
+  bestDiff: {
+    fontSize: 13,
+    color: "#86efac",
+    fontWeight: 500,
+    margin: 0,
+  },
+  trophyEmoji: { fontSize: 44, lineHeight: 1 },
+
+  swahili: {
+    fontSize: 14,
+    color: "#1f2937",
+    lineHeight: 1.75,
+    margin: 0,
+    fontStyle: "italic",
+  },
+
+  /* Market rows */
+  marketRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    padding: "10px 8px",
+    transition: "background 0.2s",
+  },
+  rankCol: { width: 26, flexShrink: 0, paddingTop: 2 },
+  rankEmoji: { fontSize: 17 },
+  rankNum: { fontSize: 12, fontWeight: 700, color: "#9ca3af" },
+  marketData: { flex: 1, minWidth: 0 },
+  marketTopRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: 2,
+  },
+  marketCity: { fontSize: 14, fontWeight: 700, margin: 0 },
+  netProfit: { fontSize: 15, fontWeight: 800, margin: 0, flexShrink: 0 },
+  marketMeta: { fontSize: 11, color: "#6b7280", margin: "0 0 6px" },
+  barTrack: { height: 5, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" },
+  barFill: {
+    height: "100%",
+    borderRadius: 3,
+    transition: "width 0.9s cubic-bezier(.22,.68,0,1.2)",
+  },
+  perKgCol: { textAlign: "right", flexShrink: 0, paddingTop: 2 },
+  perKgValue: { fontSize: 13, fontWeight: 700, color: "#374151" },
+  perKgUnit: { fontSize: 10, color: "#9ca3af" },
 };

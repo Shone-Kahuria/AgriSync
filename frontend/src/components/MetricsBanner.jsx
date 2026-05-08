@@ -1,46 +1,69 @@
-/**
- * Impact metrics sourced from locked decisions:
- *   4,000 KES  → Kenya Ministry of Agriculture 2023 transport cost data
- *   24 hours   → WHO agronomist access statistics (rural Kenya)
- */
+const COLORS = [
+  { bg: "linear-gradient(135deg,#f0fdf4,#dcfce7)", border: "#bbf7d0", accent: "#15803d" },
+  { bg: "linear-gradient(135deg,#eff6ff,#dbeafe)", border: "#bfdbfe", accent: "#1d4ed8" },
+  { bg: "linear-gradient(135deg,#fffbeb,#fef3c7)", border: "#fde68a", accent: "#b45309" },
+  { bg: "linear-gradient(135deg,#fdf4ff,#fae8ff)", border: "#e9d5ff", accent: "#7c3aed" },
+];
+
+const METRICS = [
+  { emoji: "💰", value: "KES 4k",  label: "saved per trip",       source: "Kenya MoA 2025", ...COLORS[0] },
+  { emoji: "⏱",  value: "24 hrs",  label: "faster expert access", source: "WHO rural data",  ...COLORS[1] },
+  { emoji: "🦠",  value: "50+",    label: "diseases detected",    source: "LLaVA-v1.5-7B",  ...COLORS[2] },
+  { emoji: "🏪",  value: "12",     label: "markets compared",     source: "KACE / WFP",      ...COLORS[3] },
+];
+
 export default function MetricsBanner() {
   return (
-    <div style={styles.banner}>
+    <div style={s.grid}>
       {METRICS.map((m) => (
-        <div key={m.label} style={styles.metric}>
-          <span style={styles.value}>{m.value}</span>
-          <span style={styles.label}>{m.label}</span>
-          <span style={styles.source}>{m.source}</span>
+        <div key={m.label} style={{ ...s.card, background: m.bg, borderColor: m.border }}>
+          <span style={s.emoji}>{m.emoji}</span>
+          <span style={{ ...s.value, color: m.accent }}>{m.value}</span>
+          <span style={s.label}>{m.label}</span>
+          <span style={s.source}>{m.source}</span>
         </div>
       ))}
     </div>
   );
 }
 
-const METRICS = [
-  { value: "KES 4,000",  label: "saved per market trip",      source: "Kenya MoA 2025" },
-  { value: "24 hrs",     label: "faster agronomist access",   source: "WHO rural data" },
-  { value: "50+",        label: "diseases detected",          source: "LLaVA-v1.5-7B"  },
-  { value: "12",         label: "markets compared live",      source: "KACE/WFP prices" },
-];
-
-const styles = {
-  banner: {
+const s = {
+  grid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: 8,
     marginBottom: 20,
   },
-  metric: {
-    background: "#f0fdf4",
-    border: "1px solid #bbf7d0",
-    borderRadius: 10,
-    padding: "10px 12px",
+  card: {
+    borderRadius: 14,
+    border: "1px solid",
+    padding: "13px 14px",
     display: "flex",
     flexDirection: "column",
-    gap: 1,
+    gap: 2,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)",
   },
-  value: { fontSize: 20, fontWeight: 700, color: "#15803d", lineHeight: 1.1 },
-  label: { fontSize: 11, color: "#374151", fontWeight: 500 },
-  source: { fontSize: 10, color: "#9ca3af", marginTop: 2 },
+  emoji: {
+    fontSize: 20,
+    lineHeight: 1,
+    marginBottom: 5,
+  },
+  value: {
+    fontSize: 23,
+    fontWeight: 800,
+    lineHeight: 1,
+    letterSpacing: "-0.025em",
+  },
+  label: {
+    fontSize: 11,
+    color: "#374151",
+    fontWeight: 500,
+    marginTop: 2,
+    lineHeight: 1.3,
+  },
+  source: {
+    fontSize: 9.5,
+    color: "#9ca3af",
+    marginTop: 3,
+  },
 };

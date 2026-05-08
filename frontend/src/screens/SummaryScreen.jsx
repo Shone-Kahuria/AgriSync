@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ResultCard from "../components/ResultCard";
 import { getReport, registerFarmer, getFarmerHistory } from "../api/client";
 
 export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
-  const [farmerName, setFarmerName] = useState(() => localStorage.getItem("agrisync_name") || "");
-  const [phone, setPhone] = useState(() => localStorage.getItem("agrisync_phone") || "");
+  const [farmerName, setFarmerName] = useState(
+    () => localStorage.getItem("agrisync_name") || ""
+  );
+  const [phone, setPhone] = useState(
+    () => localStorage.getItem("agrisync_phone") || ""
+  );
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
@@ -18,7 +22,6 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
     setFarmerName(val);
     localStorage.setItem("agrisync_name", val);
   }
-
   function handlePhoneChange(val) {
     setPhone(val);
     localStorage.setItem("agrisync_phone", val);
@@ -28,12 +31,14 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
     setError(null);
     setLoading(true);
     try {
-      const data = await getReport(diagnoseResult, arbitrageResult, farmerName, phone || null);
+      const data = await getReport(
+        diagnoseResult, arbitrageResult, farmerName, phone || null
+      );
       setReport(data);
       if (phone) {
         registerFarmer(phone, farmerName || null, null, null).catch(() => {});
       }
-    } catch (e) {
+    } catch {
       setError("Could not generate report — please try again.");
     } finally {
       setLoading(false);
@@ -47,7 +52,7 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
     try {
       const data = await getFarmerHistory(phone);
       setHistory(data);
-    } catch (e) {
+    } catch {
       setHistory({ error: "No history found for this number." });
     } finally {
       setHistoryLoading(false);
@@ -55,156 +60,368 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
   }
 
   return (
-    <div style={styles.screen}>
-      <h2 style={styles.heading}>Summary Report</h2>
-      <p style={styles.sub}>Bilingual advisory combining diagnosis and market data</p>
+    <div style={s.screen}>
+      <div style={s.pageHeader}>
+        <h2 style={s.heading}>Summary Report</h2>
+        <p style={s.sub}>Bilingual advisory combining diagnosis &amp; market data</p>
+      </div>
 
+      {/* Empty state */}
       {!hasData && (
-        <div style={styles.empty}>
-          <p style={styles.emptyIcon}>📋</p>
-          <p style={styles.emptyText}>Complete the diagnosis and/or market steps first to generate a combined report.</p>
+        <div style={s.empty}>
+          <div style={s.emptyIconWrap}>
+            <span style={s.emptyEmoji}>📋</span>
+          </div>
+          <p style={s.emptyTitle}>No data yet</p>
+          <p style={s.emptyText}>
+            Complete the <strong>Diagnose</strong> and/or <strong>Market</strong> steps
+            first to generate a combined report.
+          </p>
         </div>
       )}
 
+      {/* Input form */}
       {hasData && !report && (
-        <div style={styles.form}>
-          <div style={styles.dataChips}>
+        <div>
+          {/* Data chips */}
+          <div style={s.chipRow}>
             {diagnoseResult && (
-              <div style={{ ...styles.chip, background: "#fef3c7", color: "#92400e" }}>
-                ✓ Disease: {diagnoseResult.disease_name}
+              <div style={{ ...s.chip, background: "#fef3c7", borderColor: "#fde68a", color: "#92400e" }}>
+                <span>🔬</span>
+                <span>{diagnoseResult.disease_name}</span>
               </div>
             )}
             {arbitrageResult && (
-              <div style={{ ...styles.chip, background: "#dcfce7", color: "#166534" }}>
-                ✓ Best market: {arbitrageResult.best_market}
+              <div style={{ ...s.chip, background: "#dcfce7", borderColor: "#bbf7d0", color: "#166534" }}>
+                <span>📊</span>
+                <span>Best: {arbitrageResult.best_market}</span>
               </div>
             )}
           </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Farmer name (optional)</label>
-            <input
-              style={styles.input} placeholder="e.g. Wanjiku Kamau"
-              value={farmerName} onChange={(e) => handleNameChange(e.target.value)}
-            />
-          </div>
+          <div style={s.formCard}>
+            <p style={s.formSectionTitle}>Farmer Details</p>
+            <p style={s.formSectionSub}>Optional — used to personalise your report</p>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Phone for SMS (optional)</label>
-            <input
-              style={styles.input} placeholder="+254 7XX XXX XXX" type="tel"
-              value={phone} onChange={(e) => handlePhoneChange(e.target.value)}
-            />
-            <span style={styles.hint}>Sends via Africa's Talking API (Swahili SMS)</span>
-          </div>
+            <div style={s.field}>
+              <label style={s.label}>Full name</label>
+              <input
+                style={s.input}
+                placeholder="e.g. Wanjiku Kamau"
+                value={farmerName}
+                onChange={(e) => handleNameChange(e.target.value)}
+              />
+            </div>
+            <div style={s.field}>
+              <label style={s.label}>Phone number (for SMS)</label>
+              <input
+                style={s.input}
+                placeholder="+254 7XX XXX XXX"
+                type="tel"
+                value={phone}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+              />
+              <span style={s.hint}>📱 Swahili SMS via Africa's Talking API</span>
+            </div>
 
-          {error && <p style={styles.error}>{error}</p>}
+            {error && (
+              <div style={s.errorBox}>
+                <span>⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
 
-          <button style={styles.genBtn} onClick={handleGenerate} disabled={loading}>
-            Generate Report
-          </button>
-
-          {phone && (
-            <button style={styles.historyBtn} onClick={handleViewHistory} disabled={historyLoading}>
-              {historyLoading ? "Loading…" : "View History"}
+            <button style={s.genBtn} onClick={handleGenerate} disabled={loading}>
+              {loading ? "Generating…" : "Generate Report →"}
             </button>
-          )}
+
+            {phone && (
+              <button
+                style={s.historyBtn}
+                onClick={handleViewHistory}
+                disabled={historyLoading}
+              >
+                {historyLoading ? "Loading…" : "📜 View My History"}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
+      {/* History panel */}
       {history && (
-        <ResultCard title="Your History" accent="#7c3aed">
+        <ResultCard title="Farming History" icon="📜" accent="#7c3aed">
           {history.error ? (
-            <p style={styles.historyEmpty}>{history.error}</p>
+            <p style={s.historyEmpty}>{history.error}</p>
           ) : (
             <>
-              <p style={styles.historyMeta}>
-                {history.farmer?.name || "Farmer"} · {history.total_diagnoses} diagnoses · {history.total_market_queries} market queries
-              </p>
+              <div style={s.historyHeader}>
+                <span style={s.historyName}>
+                  {history.farmer?.name || "Farmer"}
+                </span>
+                <div style={s.historyMeta}>
+                  <span style={s.historyPill}>
+                    🔬 {history.total_diagnoses} diagnoses
+                  </span>
+                  <span style={s.historyPill}>
+                    📊 {history.total_market_queries} queries
+                  </span>
+                </div>
+              </div>
               {history.recent_diagnoses?.slice(0, 3).map((d, i) => (
-                <p key={i} style={styles.historyItem}>
-                  {d.disease_name} — {Math.round(d.confidence * 100)}% conf — {d.crop_type || "crop"}
-                </p>
+                <div key={i} style={s.historyItem}>
+                  <span style={s.historyItemIcon}>🔬</span>
+                  <span>
+                    {d.disease_name} — {Math.round(d.confidence * 100)}% confidence
+                  </span>
+                </div>
               ))}
               {history.recent_market_queries?.slice(0, 3).map((m, i) => (
-                <p key={i} style={styles.historyItem}>
-                  {m.crop} → {m.best_market_recommended} · KES {m.net_profit_kes?.toLocaleString()}/kg
-                </p>
+                <div key={i} style={s.historyItem}>
+                  <span style={s.historyItemIcon}>📊</span>
+                  <span>
+                    {m.crop} → {m.best_market_recommended} · KES{" "}
+                    {m.net_profit_kes?.toLocaleString()}/kg
+                  </span>
+                </div>
               ))}
             </>
           )}
         </ResultCard>
       )}
 
-      {loading && <LoadingSpinner label="Orchestrating bilingual report with Mistral-7B…" />}
+      {loading && <LoadingSpinner label="Orchestrating bilingual report…" />}
 
+      {/* Report output */}
       {report && (
-        <>
-          <ResultCard title="English Advisory" accent="#1d4ed8">
-            <p style={styles.reportText}>{report.english_report}</p>
+        <div style={s.reportSection}>
+          <ResultCard title="English Advisory" icon="📝" accent="#1d4ed8">
+            <p style={s.reportText}>{report.english_report}</p>
           </ResultCard>
 
-          <ResultCard title="Ushauri wa Kiswahili" accent="#0d9488">
-            <p style={styles.reportText}>{report.swahili_report}</p>
+          <ResultCard title="Ushauri wa Kiswahili" icon="🇰🇪" accent="#0d9488">
+            <p style={s.reportText}>{report.swahili_report}</p>
           </ResultCard>
 
-          <ResultCard title="SMS Preview (≤160 chars)" accent="#7c3aed">
-            <div style={styles.smsBox}>
-              <p style={styles.smsText}>{report.sms_text}</p>
-              <p style={styles.smsLen}>{report.sms_text.length}/160</p>
+          <ResultCard title="SMS Preview" icon="📱" accent="#7c3aed">
+            <div style={s.smsBubble}>
+              <p style={s.smsText}>{report.sms_text}</p>
             </div>
-            {report.send_sms && (
-              <p style={styles.smsSent}>✓ SMS sent via Africa's Talking API</p>
-            )}
+            <div style={s.smsFooter}>
+              <span
+                style={{
+                  ...s.smsCount,
+                  color: report.sms_text.length > 140 ? "#d97706" : "#9ca3af",
+                }}
+              >
+                {report.sms_text.length}/160 chars
+              </span>
+              {report.send_sms && (
+                <span style={s.smsSent}>✓ Sent via Africa's Talking</span>
+              )}
+            </div>
           </ResultCard>
 
-          <button style={styles.resetBtn} onClick={() => setReport(null)}>
-            Regenerate
+          <button style={s.resetBtn} onClick={() => setReport(null)}>
+            ↻ Regenerate Report
           </button>
-        </>
+        </div>
       )}
     </div>
   );
 }
 
-const styles = {
-  screen: { padding: "0 0 32px" },
-  heading: { fontSize: 20, fontWeight: 600, color: "#111827", margin: "0 0 4px" },
-  sub: { fontSize: 13, color: "#6b7280", margin: "0 0 18px" },
+const s = {
+  screen: { paddingBottom: 32 },
+
+  pageHeader: { marginBottom: 18 },
+  heading: {
+    fontSize: 22,
+    fontWeight: 800,
+    color: "#111827",
+    margin: "0 0 4px",
+    letterSpacing: "-0.025em",
+  },
+  sub: { fontSize: 13, color: "#6b7280", margin: 0 },
+
+  /* Empty state */
   empty: {
-    textAlign: "center", padding: "40px 16px",
-    background: "#f9fafb", borderRadius: 12, border: "1px dashed #d1d5db",
+    textAlign: "center",
+    padding: "52px 24px 44px",
+    background: "#fff",
+    borderRadius: 18,
+    border: "1px dashed #d1d5db",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
   },
-  emptyIcon: { fontSize: 36, margin: "0 0 8px" },
-  emptyText: { fontSize: 13, color: "#6b7280", margin: 0 },
-  form: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 },
-  dataChips: { display: "flex", flexWrap: "wrap", gap: 8 },
-  chip: { fontSize: 12, fontWeight: 500, padding: "4px 12px", borderRadius: 20 },
-  field: { display: "flex", flexDirection: "column", gap: 4 },
-  label: { fontSize: 12, fontWeight: 500, color: "#374151" },
-  input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 15, outline: "none" },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: "50%",
+    background: "#f3f4f6",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    margin: "0 auto 14px",
+  },
+  emptyEmoji: { fontSize: 32 },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: 800,
+    color: "#111827",
+    margin: "0 0 8px",
+    letterSpacing: "-0.01em",
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "#6b7280",
+    margin: 0,
+    lineHeight: 1.65,
+  },
+
+  /* Data chips */
+  chipRow: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 },
+  chip: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 12,
+    fontWeight: 600,
+    padding: "6px 12px",
+    borderRadius: 20,
+    border: "1px solid",
+  },
+
+  /* Form */
+  formCard: {
+    background: "#fff",
+    borderRadius: 16,
+    border: "1px solid #e5e7eb",
+    padding: "18px 16px",
+    marginBottom: 16,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 3px 10px rgba(0,0,0,0.03)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+  },
+  formSectionTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#111827",
+    margin: 0,
+    letterSpacing: "-0.01em",
+  },
+  formSectionSub: {
+    fontSize: 12,
+    color: "#9ca3af",
+    margin: "-10px 0 0",
+  },
+  field: { display: "flex", flexDirection: "column", gap: 5 },
+  label: { fontSize: 12, fontWeight: 600, color: "#374151" },
+  input: {
+    padding: "11px 12px",
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    fontSize: 14,
+    outline: "none",
+    background: "#f9fafb",
+    transition: "border-color 0.15s",
+  },
   hint: { fontSize: 11, color: "#9ca3af" },
+
   genBtn: {
-    padding: "12px 0", borderRadius: 10,
-    background: "#1d4ed8", color: "#fff", border: "none",
-    fontSize: 15, fontWeight: 600, cursor: "pointer",
-  },
-  error: { fontSize: 13, color: "#dc2626", background: "#fef2f2", borderRadius: 8, padding: "10px 14px" },
-  reportText: { fontSize: 14, color: "#1f2937", lineHeight: 1.6, margin: 0 },
-  smsBox: { background: "#f5f3ff", borderRadius: 8, padding: "10px 12px", marginBottom: 6 },
-  smsText: { fontSize: 13, color: "#4c1d95", margin: "0 0 4px", lineHeight: 1.5 },
-  smsLen: { fontSize: 11, color: "#7c3aed", margin: 0, textAlign: "right" },
-  smsSent: { fontSize: 12, color: "#16a34a", margin: 0 },
-  resetBtn: {
-    padding: "10px 20px", borderRadius: 8, background: "none",
-    border: "1px solid #d1d5db", fontSize: 13, color: "#6b7280", cursor: "pointer",
+    padding: "14px 0",
+    borderRadius: 12,
+    background: "linear-gradient(135deg,#1d4ed8,#2563eb)",
+    color: "#fff",
+    border: "none",
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 4px 14px rgba(29,78,216,0.3)",
+    letterSpacing: "0.01em",
   },
   historyBtn: {
-    padding: "10px 0", borderRadius: 8, background: "none",
-    border: "1px solid #7c3aed", fontSize: 13, color: "#7c3aed",
-    fontWeight: 500, cursor: "pointer",
+    padding: "12px 0",
+    borderRadius: 10,
+    background: "none",
+    border: "1px solid #7c3aed",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#7c3aed",
+    cursor: "pointer",
   },
-  historyMeta: { fontSize: 12, color: "#6b7280", margin: "0 0 8px", fontWeight: 500 },
-  historyItem: { fontSize: 13, color: "#374151", margin: "2px 0", lineHeight: 1.4 },
+  errorBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 13,
+    color: "#dc2626",
+    background: "#fef2f2",
+    borderRadius: 10,
+    padding: "10px 14px",
+    border: "1px solid #fecaca",
+  },
+
+  /* History */
+  historyHeader: { marginBottom: 12 },
+  historyName: {
+    display: "block",
+    fontSize: 15,
+    fontWeight: 800,
+    color: "#111827",
+    marginBottom: 6,
+    letterSpacing: "-0.01em",
+  },
+  historyMeta: { display: "flex", gap: 6, flexWrap: "wrap" },
+  historyPill: {
+    fontSize: 11,
+    fontWeight: 600,
+    background: "#f3f4f6",
+    color: "#374151",
+    padding: "3px 10px",
+    borderRadius: 20,
+  },
+  historyItem: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: 8,
+    fontSize: 13,
+    color: "#374151",
+    margin: "5px 0",
+    lineHeight: 1.45,
+  },
+  historyItemIcon: { fontSize: 12, flexShrink: 0 },
   historyEmpty: { fontSize: 13, color: "#9ca3af", margin: 0 },
+
+  /* Report */
+  reportSection: { animation: "fadeUp 0.35s ease forwards" },
+  reportText: { fontSize: 14, color: "#1f2937", lineHeight: 1.75, margin: 0 },
+
+  smsBubble: {
+    background: "#f5f3ff",
+    borderRadius: "14px 14px 4px 14px",
+    padding: "13px 15px",
+    marginBottom: 9,
+  },
+  smsText: { fontSize: 13, color: "#4c1d95", margin: 0, lineHeight: 1.6 },
+  smsFooter: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  smsCount: { fontSize: 11, fontWeight: 600 },
+  smsSent: { fontSize: 12, color: "#16a34a", fontWeight: 600 },
+
+  resetBtn: {
+    width: "100%",
+    padding: "13px 0",
+    borderRadius: 10,
+    background: "none",
+    border: "1px solid #d1d5db",
+    fontSize: 14,
+    color: "#374151",
+    cursor: "pointer",
+    fontWeight: 500,
+    marginTop: 4,
+  },
 };
