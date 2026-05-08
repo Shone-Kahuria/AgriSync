@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import SplashScreen    from "./screens/SplashScreen";
 import AuthScreen      from "./screens/AuthScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import DiagnoseScreen  from "./screens/DiagnoseScreen";
@@ -56,6 +57,10 @@ const BOTTOM_TABS = [
 const SHOW_METRICS = new Set(["diagnose", "market"]);
 
 export default function App() {
+  const [splashDone, setSplashDone] = useState(
+    () => sessionStorage.getItem("agrisync_splashed") === "1"
+  );
+
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem("agrisync_user")); }
     catch { return null; }
@@ -64,6 +69,18 @@ export default function App() {
   const [tab, setTab]             = useState("dashboard");
   const [diagnoseResult, setDiagnoseResult] = useState(null);
   const [arbitrageResult, setArbitrageResult] = useState(null);
+
+  /* Splash — once per browser session */
+  if (!splashDone) {
+    return (
+      <SplashScreen
+        onDone={() => {
+          sessionStorage.setItem("agrisync_splashed", "1");
+          setSplashDone(true);
+        }}
+      />
+    );
+  }
 
   /* Auth gate */
   if (!user) {
