@@ -1,25 +1,124 @@
 import { useState } from "react";
-import DiagnoseScreen from "./screens/DiagnoseScreen";
-import MarketScreen from "./screens/MarketScreen";
-import SummaryScreen from "./screens/SummaryScreen";
-import MetricsBanner from "./components/MetricsBanner";
 
-const TABS = [
-  { id: "diagnose", label: "Diagnose",  icon: "🔬", sub: "AI crop disease" },
-  { id: "market",   label: "Market",    icon: "📊", sub: "Best price finder" },
-  { id: "report",   label: "Report",    icon: "📋", sub: "Bilingual advisory" },
+import AuthScreen      from "./screens/AuthScreen";
+import DashboardScreen from "./screens/DashboardScreen";
+import DiagnoseScreen  from "./screens/DiagnoseScreen";
+import MarketScreen    from "./screens/MarketScreen";
+import SummaryScreen   from "./screens/SummaryScreen";
+import TrendsScreen    from "./screens/TrendsScreen";
+import WeatherScreen   from "./screens/WeatherScreen";
+import CropGuideScreen from "./screens/CropGuideScreen";
+import ProfileScreen   from "./screens/ProfileScreen";
+import MetricsBanner   from "./components/MetricsBanner";
+
+/* ── Navigation structure ──────────────────────────────────────── */
+const SIDEBAR_SECTIONS = [
+  {
+    label: "Overview",
+    items: [
+      { id: "dashboard", label: "Dashboard",  icon: "🏠", sub: "Home & alerts" },
+    ],
+  },
+  {
+    label: "Farming Tools",
+    items: [
+      { id: "diagnose", label: "Diagnose",       icon: "🔬", sub: "AI crop disease" },
+      { id: "market",   label: "Find Market",    icon: "📊", sub: "Best price finder" },
+      { id: "report",   label: "Report",         icon: "📋", sub: "Bilingual advisory" },
+    ],
+  },
+  {
+    label: "Insights",
+    items: [
+      { id: "trends",  label: "Price Trends", icon: "📈", sub: "8-week history" },
+      { id: "weather", label: "Weather",      icon: "🌤️", sub: "Forecast & calendar" },
+      { id: "guide",   label: "Crop Guide",   icon: "📚", sub: "Disease library" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { id: "profile", label: "Profile", icon: "👤", sub: "Settings & history" },
+    ],
+  },
 ];
 
+/* Bottom nav — 5 most-used tabs */
+const BOTTOM_TABS = [
+  { id: "dashboard", label: "Home",    icon: "🏠" },
+  { id: "diagnose",  label: "Diagnose", icon: "🔬" },
+  { id: "market",    label: "Market",  icon: "📊" },
+  { id: "guide",     label: "Guide",   icon: "📚" },
+  { id: "profile",   label: "Profile", icon: "👤" },
+];
+
+/* Pages that show MetricsBanner */
+const SHOW_METRICS = new Set(["diagnose", "market"]);
+
 export default function App() {
-  const [tab, setTab] = useState("diagnose");
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("agrisync_user")); }
+    catch { return null; }
+  });
+
+  const [tab, setTab]             = useState("dashboard");
   const [diagnoseResult, setDiagnoseResult] = useState(null);
   const [arbitrageResult, setArbitrageResult] = useState(null);
 
+  /* Auth gate */
+  if (!user) {
+    return <AuthScreen onAuth={setUser} />;
+  }
+
   const bothDone = diagnoseResult && arbitrageResult;
+
+  /* Track usage stats for dashboard */
+  function onDiagnoseResult(data) {
+    setDiagnoseResult(data);
+    const c = Number(localStorage.getItem("agrisync_diag_count") || 0) + 1;
+    localStorage.setItem("agrisync_diag_count", c);
+  }
+  function onMarketResult(data) {
+    setArbitrageResult(data);
+    const c = Number(localStorage.getItem("agrisync_mkt_count") || 0) + 1;
+    localStorage.setItem("agrisync_mkt_count", c);
+  }
+
+  function renderScreen() {
+    switch (tab) {
+      case "dashboard": return (
+        <DashboardScreen
+          user={user}
+          onNavigate={setTab}
+          diagnoseResult={diagnoseResult}
+          arbitrageResult={arbitrageResult}
+        />
+      );
+      case "diagnose": return <DiagnoseScreen onResult={onDiagnoseResult} />;
+      case "market":   return <MarketScreen   onResult={onMarketResult} />;
+      case "report":   return (
+        <SummaryScreen
+          diagnoseResult={diagnoseResult}
+          arbitrageResult={arbitrageResult}
+        />
+      );
+      case "trends":  return <TrendsScreen />;
+      case "weather": return <WeatherScreen user={user} />;
+      case "guide":   return <CropGuideScreen />;
+      case "profile": return (
+        <ProfileScreen
+          user={user}
+          onUserUpdate={(u) => setUser(u)}
+          onLogout={() => setUser(null)}
+        />
+      );
+      default: return null;
+    }
+  }
 
   return (
     <div className="app-shell">
-      {/* ── Sidebar (desktop) ── */}
+      {/* ── Sidebar (desktop ≥768px) ─────────────────────────── */}
       <aside className="sidebar">
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">🌿</div>
@@ -30,26 +129,37 @@ export default function App() {
         </div>
 
         <nav className="sidebar-nav">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className={`sidebar-nav-item${tab === t.id ? " active" : ""}`}
-              onClick={() => setTab(t.id)}
-            >
-              <span className="sidebar-nav-icon">{t.icon}</span>
-              <div style={{ flex: 1 }}>
-                <div>{t.label}</div>
-                <div className="sidebar-nav-sub">{t.sub}</div>
-              </div>
-              {t.id === "report" && bothDone && tab !== "report" && (
-                <span className="sidebar-nav-dot" />
-              )}
-            </button>
+          {SIDEBAR_SECTIONS.map((section) => (
+            <div key={section.label} style={{ marginBottom: 4 }}>
+              <p style={{
+                fontSize: 9.5, fontWeight: 700, letterSpacing: ".1em",
+                color: "rgba(255,255,255,.3)", textTransform: "uppercase",
+                padding: "10px 14px 4px", margin: 0,
+              }}>
+                {section.label}
+              </p>
+              {section.items.map((t) => (
+                <button
+                  key={t.id}
+                  className={`sidebar-nav-item${tab === t.id ? " active" : ""}`}
+                  onClick={() => setTab(t.id)}
+                >
+                  <span className="sidebar-nav-icon">{t.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div>{t.label}</div>
+                    <div className="sidebar-nav-sub">{t.sub}</div>
+                  </div>
+                  {t.id === "report" && bothDone && tab !== "report" && (
+                    <span className="sidebar-nav-dot" />
+                  )}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 
         <div className="sidebar-footer">
-          <div className={`sidebar-badge sidebar-badge-amd`}>
+          <div className="sidebar-badge sidebar-badge-amd">
             <span className="sidebar-badge-icon">⚡</span>
             <span className="sidebar-badge-text">AMD MI300X</span>
           </div>
@@ -60,9 +170,9 @@ export default function App() {
         </div>
       </aside>
 
-      {/* ── App body ── */}
+      {/* ── App body ─────────────────────────────────────────── */}
       <div className="app-body">
-        {/* Topbar (mobile only) */}
+        {/* Mobile topbar */}
         <header className="topbar">
           <div className="topbar-logo">
             <div className="topbar-logo-icon">🌿</div>
@@ -76,29 +186,21 @@ export default function App() {
 
         {/* Main content */}
         <main className="main-content">
-          <MetricsBanner />
-
-          {tab === "diagnose" && <DiagnoseScreen onResult={setDiagnoseResult} />}
-          {tab === "market"   && <MarketScreen   onResult={setArbitrageResult} />}
-          {tab === "report"   && (
-            <SummaryScreen
-              diagnoseResult={diagnoseResult}
-              arbitrageResult={arbitrageResult}
-            />
-          )}
+          {SHOW_METRICS.has(tab) && <MetricsBanner />}
+          {renderScreen()}
         </main>
 
-        {/* Nudge banner */}
+        {/* Nudge banner — only when both diagnose + market are done */}
         {bothDone && tab !== "report" && (
           <button className="nudge-banner" onClick={() => setTab("report")}>
             <span className="nudge-dot" />
-            Both steps done — generate your report →
+            Both steps done — generate your bilingual report →
           </button>
         )}
 
-        {/* Bottom nav (mobile only) */}
+        {/* Mobile bottom nav */}
         <nav className="bottom-nav">
-          {TABS.map((t) => (
+          {BOTTOM_TABS.map((t) => (
             <button
               key={t.id}
               className={`bottom-nav-item${tab === t.id ? " active" : ""}`}
@@ -106,7 +208,7 @@ export default function App() {
             >
               <span className="bottom-nav-icon">{t.icon}</span>
               <span>{t.label}</span>
-              {t.id === "report" && bothDone && tab !== "report" && (
+              {t.id === "dashboard" && bothDone && tab !== "report" && (
                 <span className="bottom-nav-pip" />
               )}
             </button>
