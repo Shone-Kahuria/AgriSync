@@ -182,12 +182,23 @@ class CropListItem(BaseModel):
         from_attributes = True
 
 
+class ChemicalBrief(BaseModel):
+    name: str
+    pcpb_status: str
+
+    class Config:
+        from_attributes = True
+
+
 class DiseaseListItem(BaseModel):
     id: int
     name: str
     name_sw: Optional[str]
     crop_id: int
+    crop_name: str = ""
     severity: str
+    symptoms: Optional[str] = None
+    treatments: list[ChemicalBrief] = []
 
     class Config:
         from_attributes = True
