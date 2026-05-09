@@ -1,24 +1,24 @@
 const ALERTS = [
   {
     icon: "🦠",
-    title: "Maize Lethal Necrosis — Rift Valley Alert",
-    body: "Outbreak reported in Nakuru and Kericho counties. Scout your maize fields for chlorotic streaking and mosaic symptoms.",
+    title: "Fall Armyworm outbreak — West Africa",
+    body: "FAO reports active Fall Armyworm pressure in Nigeria, Ghana, and Côte d'Ivoire. Scout maize fields for leaf damage and frass. Apply approved biopesticides within 48 hours.",
     badge: "HIGH RISK",
     badgeColor: "#dc2626", badgeBg: "#fee2e2",
     borderColor: "#fecaca",
   },
   {
     icon: "📈",
-    title: "Tomato prices up 31% in Nairobi",
-    body: "Nairobi Wakulima Market is offering KES 112/kg this week — highest in 8 weeks. Consider selling now.",
+    title: "Tomato prices surge 28% — East Africa",
+    body: "Nairobi Wakulima and Kampala City markets are offering peak prices this week — highest in 10 weeks across the region. Optimal selling window open now.",
     badge: "MARKET TIP",
     badgeColor: "#15803d", badgeBg: "#dcfce7",
     borderColor: "#bbf7d0",
   },
   {
     icon: "🌧️",
-    title: "Light rains expected Thursday–Friday",
-    body: "Good conditions for transplanting seedlings. Apply systemic fungicide before rains to prevent late blight spread.",
+    title: "Erratic rains forecast — Southern Africa",
+    body: "Zimbabwe, Zambia, and Malawi expect below-average rainfall through June. Consider drought-tolerant crop varieties and irrigation scheduling adjustments.",
     badge: "WEATHER",
     badgeColor: "#1d4ed8", badgeBg: "#dbeafe",
     borderColor: "#bfdbfe",
@@ -35,18 +35,18 @@ const SHORTCUTS = [
 ];
 
 const RECENT_ACTIVITY = [
-  { icon: "🔬", bg: "#fef3c7", label: "Tomato Late Blight diagnosed", sub: "87% confidence · Yesterday" },
-  { icon: "📊", bg: "#dcfce7", label: "Maize sold — Nairobi best price", sub: "KES 54/kg · 2 days ago" },
-  { icon: "📋", bg: "#dbeafe", label: "Bilingual report generated", sub: "English + Swahili · 3 days ago" },
+  { icon: "🔬", bg: "#fef3c7", label: "Cassava Mosaic Disease diagnosed",  sub: "91% confidence · Yesterday" },
+  { icon: "📊", bg: "#dcfce7", label: "Maize sold — Nairobi best price",   sub: "KES 54/kg · 2 days ago" },
+  { icon: "📋", bg: "#dbeafe", label: "Bilingual report generated",        sub: "English + Swahili · 3 days ago" },
 ];
 
 export default function DashboardScreen({ user, onNavigate, diagnoseResult, arbitrageResult }) {
   const greeting = getGreeting();
   const firstName = (user?.name || "Farmer").split(" ")[0];
 
-  const diagCount  = Number(localStorage.getItem("agrisync_diag_count")  || 0);
-  const mktCount   = Number(localStorage.getItem("agrisync_mkt_count")   || 0);
-  const savedKes   = diagCount * 420 + mktCount * 380;
+  const diagCount = Number(localStorage.getItem("agrisync_diag_count") || 0);
+  const mktCount  = Number(localStorage.getItem("agrisync_mkt_count")  || 0);
+  const savedEst  = diagCount * 420 + mktCount * 380;
 
   return (
     <div style={{ paddingBottom: 8 }}>
@@ -55,8 +55,8 @@ export default function DashboardScreen({ user, onNavigate, diagnoseResult, arbi
         <p className="dash-welcome-greeting">{greeting}</p>
         <p className="dash-welcome-name">{firstName} 👋</p>
         <div className="dash-welcome-meta">
-          <span className="dash-welcome-location">📍 {user?.location || "Nakuru"}</span>
-          <span className="dash-welcome-weather">🌤️ 22°C · Partly Cloudy</span>
+          <span className="dash-welcome-location">📍 {user?.location || "Africa"}</span>
+          <span className="dash-welcome-weather">🌤️ 24°C · Partly Cloudy</span>
         </div>
       </div>
 
@@ -71,10 +71,10 @@ export default function DashboardScreen({ user, onNavigate, diagnoseResult, arbi
           <div className="dash-stat-lbl">Markets checked</div>
         </div>
         <div className="dash-stat">
-          <div className="dash-stat-val" style={{ fontSize: savedKes > 999 ? 16 : 22 }}>
-            {savedKes > 0 ? `${(savedKes / 1000).toFixed(1)}k` : "—"}
+          <div className="dash-stat-val" style={{ fontSize: savedEst > 999 ? 16 : 22 }}>
+            {savedEst > 0 ? `${(savedEst / 1000).toFixed(1)}k` : "—"}
           </div>
-          <div className="dash-stat-lbl">KES saved est.</div>
+          <div className="dash-stat-lbl">Est. KES saved</div>
         </div>
       </div>
 
@@ -108,6 +108,7 @@ export default function DashboardScreen({ user, onNavigate, diagnoseResult, arbi
             key={s.id}
             className="dash-shortcut"
             onClick={() => onNavigate(s.id)}
+            aria-label={s.title}
           >
             <span className="dash-shortcut-icon">{s.icon}</span>
             <span className="dash-shortcut-title">{s.title}</span>

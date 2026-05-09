@@ -1001,3 +1001,132 @@ button:focus-visible { outline: 2px solid var(--g500); outline-offset: 2px; }
 @keyframes splashLogoIn { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
 @keyframes splashSlideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
 @keyframes splashDot    { 0%,100% { opacity:.35; transform:scale(.8); } 50% { opacity:1; transform:scale(1.3); background:#4ade80; } }
+
+/* 23. MICRO-INTERACTIONS */
+.page-transition { animation: pageRise .28s var(--e3) both; }
+@keyframes pageRise { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+
+.btn:active         { transform: scale(.97); }
+.btn-primary:active { transform: scale(.97); box-shadow: 0 2px 8px rgba(22,163,74,.3); }
+
+/* bottom-nav active underline glow */
+.bottom-nav-item { position: relative; }
+.bottom-nav-item.active::after {
+  content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 24px; height: 3px; border-radius: 3px 3px 0 0;
+  background: #4ade80; box-shadow: 0 0 10px rgba(74,222,128,.7);
+  animation: navLineIn .22s var(--e3) both;
+}
+@keyframes navLineIn { from { opacity:0; width:6px; } to { opacity:1; width:24px; } }
+
+/* sidebar active left accent */
+.sidebar-nav-item { position: relative; }
+.sidebar-nav-item.active::before {
+  content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 3px; border-radius: 0 3px 3px 0;
+  background: #4ade80; box-shadow: 0 0 10px rgba(74,222,128,.8);
+}
+
+/* stagger helpers */
+.stagger > *:nth-child(1) { animation-delay:.04s; }
+.stagger > *:nth-child(2) { animation-delay:.08s; }
+.stagger > *:nth-child(3) { animation-delay:.12s; }
+.stagger > *:nth-child(4) { animation-delay:.16s; }
+.stagger > *:nth-child(5) { animation-delay:.20s; }
+.stagger > *:nth-child(6) { animation-delay:.24s; }
+
+/* focus ring */
+:focus-visible { outline: 3px solid rgba(74,222,128,.6); outline-offset: 2px; border-radius: 4px; }
+
+/* card hover lift (shared) */
+.card { transition: box-shadow var(--e2), transform var(--e2); }
+.card:hover { box-shadow: var(--sh-hover); }
+
+/* 24. TOASTS */
+.toast-stack {
+  position: fixed; bottom: calc(var(--botnav-h) + 12px); left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column-reverse; gap: 8px;
+  z-index: 9999; pointer-events: none;
+  width: min(380px, calc(100vw - 32px));
+}
+@media (min-width: 768px) {
+  .toast-stack { bottom: 20px; left: auto; right: 24px; transform: none; }
+}
+.toast {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 13px 16px; border-radius: 14px; background: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12), 0 16px 40px rgba(0,0,0,.1), 0 0 0 1px rgba(0,0,0,.05);
+  pointer-events: all; position: relative; overflow: hidden;
+  animation: toastIn .3s var(--e3) both;
+}
+.toast.exiting { animation: toastOut .3s var(--e3) forwards; }
+
+.toast-success .toast-icon { color: #16a34a; background: #dcfce7; }
+.toast-error   .toast-icon { color: #dc2626; background: #fee2e2; }
+.toast-warning .toast-icon { color: #d97706; background: #fef3c7; }
+.toast-info    .toast-icon { color: #2563eb; background: #dbeafe; }
+
+.toast-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; flex-shrink: 0;
+}
+.toast-body { flex: 1; }
+.toast-msg  { font-size: 13.5px; font-weight: 700; color: var(--n900); line-height: 1.3; }
+.toast-sub  { font-size: 12px; color: var(--n500); margin-top: 2px; }
+
+.toast-progress {
+  position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 0 0 0 14px;
+  animation: toastProgress 2.8s linear forwards;
+}
+.toast-success .toast-progress { background: #22c55e; }
+.toast-error   .toast-progress { background: #ef4444; }
+.toast-warning .toast-progress { background: #f59e0b; }
+.toast-info    .toast-progress { background: #3b82f6; }
+
+@keyframes toastIn       { from { opacity:0; transform:translateY(16px) scale(.95); } to { opacity:1; transform:none; } }
+@keyframes toastOut      { to   { opacity:0; transform:translateY(16px) scale(.95); } }
+@keyframes toastProgress { from { width:100%; } to { width:0%; } }
+
+/* 25. ONBOARDING TOUR */
+.onboarding-overlay {
+  position: fixed; inset: 0; z-index: 8888;
+  background: rgba(0,0,0,.72); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; animation: fadeIn .3s var(--e3) both;
+}
+.onboarding-card {
+  background: #fff; border-radius: 24px; padding: 36px 28px 28px;
+  max-width: 360px; width: 100%; text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.2);
+  animation: onboardIn .36s var(--e3) both;
+}
+.onboarding-card.exiting { animation: onboardOut .22s var(--e3) forwards; }
+.onboarding-icon-wrap {
+  width: 80px; height: 80px; border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px; transition: all var(--e2);
+}
+.onboarding-title { font-size: 20px; font-weight: 900; color: var(--n900); letter-spacing: -.03em; margin-bottom: 12px; }
+.onboarding-desc  { font-size: 14px; color: var(--n600); line-height: 1.7; margin-bottom: 28px; }
+.onboarding-dots  { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+.onboarding-dot   { width: 8px; height: 8px; border-radius: 50%; background: var(--n200); transition: all var(--e2); }
+.onboarding-dot.active { width: 24px; border-radius: 4px; }
+.onboarding-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.onboarding-skip {
+  font-size: 13px; font-weight: 600; color: var(--n400);
+  background: none; border: none; padding: 8px; cursor: pointer;
+}
+.onboarding-skip:hover { color: var(--n700); }
+.onboarding-next {
+  flex: 1; padding: 13px 20px; border-radius: var(--rf); border: none;
+  font-size: 14px; font-weight: 700; color: #fff;
+  cursor: pointer; transition: all var(--e2);
+  box-shadow: 0 4px 14px rgba(0,0,0,.15);
+}
+.onboarding-next:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.onboarding-next:active { transform: scale(.97); }
+
+@keyframes onboardIn  { from { opacity:0; transform:scale(.9) translateY(20px); } to { opacity:1; transform:none; } }
+@keyframes onboardOut { to   { opacity:0; transform:scale(.9) translateY(20px); } }

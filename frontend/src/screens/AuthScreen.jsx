@@ -1,15 +1,51 @@
 import { useState } from "react";
 
-const LOCATIONS = [
-  "Nakuru", "Nairobi", "Kisumu", "Eldoret",
-  "Meru", "Nyeri", "Kakamega", "Kitale", "Machakos", "Thika",
+const REGION_GROUPS = [
+  {
+    group: "East Africa",
+    locs: [
+      "Nairobi, Kenya", "Kampala, Uganda", "Dar es Salaam, Tanzania",
+      "Addis Ababa, Ethiopia", "Kigali, Rwanda", "Mombasa, Kenya",
+      "Nakuru, Kenya", "Kisumu, Kenya", "Arusha, Tanzania", "Eldoret, Kenya",
+    ],
+  },
+  {
+    group: "West Africa",
+    locs: [
+      "Lagos, Nigeria", "Accra, Ghana", "Dakar, Senegal",
+      "Abuja, Nigeria", "Kumasi, Ghana", "Ibadan, Nigeria",
+      "Conakry, Guinea", "Lomé, Togo", "Cotonou, Benin",
+    ],
+  },
+  {
+    group: "Southern Africa",
+    locs: [
+      "Johannesburg, South Africa", "Cape Town, South Africa",
+      "Lusaka, Zambia", "Harare, Zimbabwe", "Blantyre, Malawi",
+      "Maputo, Mozambique", "Gaborone, Botswana", "Lilongwe, Malawi",
+    ],
+  },
+  {
+    group: "North Africa",
+    locs: [
+      "Cairo, Egypt", "Casablanca, Morocco", "Tunis, Tunisia",
+      "Algiers, Algeria", "Khartoum, Sudan",
+    ],
+  },
+  {
+    group: "Central Africa",
+    locs: [
+      "Kinshasa, DRC", "Douala, Cameroon", "Yaoundé, Cameroon",
+      "Luanda, Angola", "Brazzaville, Congo",
+    ],
+  },
 ];
 
 export default function AuthScreen({ onAuth }) {
   const [mode, setMode]         = useState("login");
   const [name, setName]         = useState("");
   const [phone, setPhone]       = useState("");
-  const [location, setLocation] = useState("Nakuru");
+  const [location, setLocation] = useState("Nairobi, Kenya");
   const [error, setError]       = useState(null);
 
   function handleSubmit(e) {
@@ -29,7 +65,7 @@ export default function AuthScreen({ onAuth }) {
   }
 
   function handleGuest() {
-    const user = { phone: "", name: "Guest Farmer", location: "Nakuru" };
+    const user = { phone: "", name: "Guest Farmer", location: "Nairobi, Kenya" };
     localStorage.setItem("agrisync_user", JSON.stringify(user));
     onAuth(user);
   }
@@ -47,7 +83,7 @@ export default function AuthScreen({ onAuth }) {
         <p className="auth-logo-tag">AI-Powered Farm Advisor</p>
         <p className="auth-tagline">
           Diagnose crop diseases, find the best markets,<br />
-          and receive bilingual farming guidance — built for Kenya.
+          and receive bilingual farming guidance — built for Africa.
         </p>
       </div>
 
@@ -74,7 +110,7 @@ export default function AuthScreen({ onAuth }) {
               <label className="form-label">Full name</label>
               <input
                 className="form-input"
-                placeholder="e.g. Wanjiku Kamau"
+                placeholder="e.g. Amara Diallo"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -100,7 +136,11 @@ export default function AuthScreen({ onAuth }) {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               >
-                {LOCATIONS.map((l) => <option key={l}>{l}</option>)}
+                {REGION_GROUPS.map((g) => (
+                  <optgroup key={g.group} label={g.group}>
+                    {g.locs.map((l) => <option key={l}>{l}</option>)}
+                  </optgroup>
+                ))}
               </select>
             </div>
           )}
@@ -131,7 +171,7 @@ export default function AuthScreen({ onAuth }) {
 
       {/* Pill badges */}
       <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap", justifyContent: "center", zIndex: 1 }}>
-        {["⚡ AMD MI300X", "🏆 Hackathon 2026", "🇰🇪 Built for Kenya"].map((b) => (
+        {["⚡ AMD MI300X", "🏆 Hackathon 2026", "🌍 Built for Africa"].map((b) => (
           <span
             key={b}
             style={{
@@ -147,7 +187,7 @@ export default function AuthScreen({ onAuth }) {
         ))}
       </div>
 
-      <p className="auth-footer">AgriSync · Kenya Ministry of Agriculture partner project</p>
+      <p className="auth-footer">AgriSync · Empowering African farmers with AI</p>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import SplashScreen    from "./screens/SplashScreen";
 import AuthScreen      from "./screens/AuthScreen";
@@ -11,6 +11,8 @@ import WeatherScreen   from "./screens/WeatherScreen";
 import CropGuideScreen from "./screens/CropGuideScreen";
 import ProfileScreen   from "./screens/ProfileScreen";
 import MetricsBanner   from "./components/MetricsBanner";
+import ToastContainer  from "./components/Toast";
+import OnboardingTour  from "./components/OnboardingTour";
 
 /* ── Navigation structure ──────────────────────────────────────── */
 const SIDEBAR_SECTIONS = [
@@ -53,6 +55,8 @@ const BOTTOM_TABS = [
   { id: "profile",   label: "Profile", icon: "👤" },
 ];
 
+const BOTTOM_TAB_IDS = BOTTOM_TABS.map((t) => t.id);
+
 /* Pages that show MetricsBanner */
 const SHOW_METRICS = new Set(["diagnose", "market"]);
 
@@ -66,9 +70,14 @@ export default function App() {
     catch { return null; }
   });
 
-  const [tab, setTab]             = useState("dashboard");
+  const [tab, setTab]                   = useState("dashboard");
   const [diagnoseResult, setDiagnoseResult] = useState(null);
   const [arbitrageResult, setArbitrageResult] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  /* Swipe gesture refs */
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
 
   /* Splash — once per browser session */
   if (!splashDone) {
@@ -84,12 +93,20 @@ export default function App() {
 
   /* Auth gate */
   if (!user) {
-    return <AuthScreen onAuth={setUser} />;
+    return (
+      <AuthScreen
+        onAuth={(u) => {
+          setUser(u);
+          if (!localStorage.getItem("agrisync_onboarded")) {
+            setShowOnboarding(true);
+          }
+        }}
+      />
+    );
   }
 
   const bothDone = diagnoseResult && arbitrageResult;
 
-  /* Track usage stats for dashboard */
   function onDiagnoseResult(data) {
     setDiagnoseResult(data);
     const c = Number(localStorage.getItem("agrisync_diag_count") || 0) + 1;
@@ -99,6 +116,23 @@ export default function App() {
     setArbitrageResult(data);
     const c = Number(localStorage.getItem("agrisync_mkt_count") || 0) + 1;
     localStorage.setItem("agrisync_mkt_count", c);
+  }
+
+  /* Swipe navigation between bottom tabs */
+  function handleTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+  function handleTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const idx = BOTTOM_TAB_IDS.indexOf(tab);
+    if (idx === -1) return;
+    if (dx < 0 && idx < BOTTOM_TAB_IDS.length - 1) setTab(BOTTOM_TAB_IDS[idx + 1]);
+    if (dx > 0 && idx > 0)                          setTab(BOTTOM_TAB_IDS[idx - 1]);
   }
 
   function renderScreen() {
@@ -136,7 +170,7 @@ export default function App() {
   return (
     <div className="app-shell">
       {/* ── Sidebar (desktop ≥768px) ─────────────────────────── */}
-      <aside className="sidebar">
+      <aside className="sidebar" role="navigation" aria-label="Main navigation">
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">🌿</div>
           <div>
@@ -160,6 +194,8 @@ export default function App() {
                   key={t.id}
                   className={`sidebar-nav-item${tab === t.id ? " active" : ""}`}
                   onClick={() => setTab(t.id)}
+                  aria-current={tab === t.id ? "page" : undefined}
+                  aria-label={t.label}
                 >
                   <span className="sidebar-nav-icon">{t.icon}</span>
                   <div style={{ flex: 1 }}>
@@ -167,7 +203,7 @@ export default function App() {
                     <div className="sidebar-nav-sub">{t.sub}</div>
                   </div>
                   {t.id === "report" && bothDone && tab !== "report" && (
-                    <span className="sidebar-nav-dot" />
+                    <span className="sidebar-nav-dot" aria-label="New report available" />
                   )}
                 </button>
               ))}
@@ -188,9 +224,13 @@ export default function App() {
       </aside>
 
       {/* ── App body ─────────────────────────────────────────── */}
-      <div className="app-body">
+      <div
+        className="app-body"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Mobile topbar */}
-        <header className="topbar">
+        <header className="topbar" role="banner">
           <div className="topbar-logo">
             <div className="topbar-logo-icon">🌿</div>
             <span className="topbar-logo-name">AgriSync</span>
@@ -201,10 +241,12 @@ export default function App() {
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="main-content">
+        {/* Main content — keyed so it fades on tab switch */}
+        <main className="main-content" id="main-content">
           {SHOW_METRICS.has(tab) && <MetricsBanner />}
-          {renderScreen()}
+          <div key={tab} className="page-transition">
+            {renderScreen()}
+          </div>
         </main>
 
         {/* Nudge banner — only when both diagnose + market are done */}
@@ -216,22 +258,32 @@ export default function App() {
         )}
 
         {/* Mobile bottom nav */}
-        <nav className="bottom-nav">
+        <nav className="bottom-nav" role="navigation" aria-label="Bottom navigation">
           {BOTTOM_TABS.map((t) => (
             <button
               key={t.id}
               className={`bottom-nav-item${tab === t.id ? " active" : ""}`}
               onClick={() => setTab(t.id)}
+              aria-current={tab === t.id ? "page" : undefined}
+              aria-label={t.label}
             >
               <span className="bottom-nav-icon">{t.icon}</span>
               <span>{t.label}</span>
               {t.id === "dashboard" && bothDone && tab !== "report" && (
-                <span className="bottom-nav-pip" />
+                <span className="bottom-nav-pip" aria-hidden="true" />
               )}
             </button>
           ))}
         </nav>
       </div>
+
+      {/* Global toast layer */}
+      <ToastContainer />
+
+      {/* First-run onboarding overlay */}
+      {showOnboarding && (
+        <OnboardingTour onDone={() => setShowOnboarding(false)} />
+      )}
     </div>
   );
 }

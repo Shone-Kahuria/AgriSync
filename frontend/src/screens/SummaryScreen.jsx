@@ -2,6 +2,7 @@ import { useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ResultCard from "../components/ResultCard";
 import { getReport, registerFarmer, getFarmerHistory } from "../api/client";
+import { toast } from "../components/Toast";
 
 export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
   const [farmerName, setFarmerName] = useState(
@@ -32,6 +33,7 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
     try {
       const data = await getReport(diagnoseResult, arbitrageResult, farmerName, phone || null);
       setReport(data);
+      toast.success("Report generated!", "English + local language advisory ready.");
       if (phone) registerFarmer(phone, farmerName || null, null, null).catch(() => {});
     } catch {
       setError("Could not generate report — please try again.");
@@ -114,7 +116,7 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
                 value={phone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
               />
-              <span className="form-hint">📱 Swahili SMS via Africa's Talking API</span>
+              <span className="form-hint">📱 Local language SMS via Africa's Talking API</span>
             </div>
 
             {error && (
@@ -175,7 +177,7 @@ export default function SummaryScreen({ diagnoseResult, arbitrageResult }) {
             <p className="report-text">{report.english_report}</p>
           </ResultCard>
 
-          <ResultCard title="Ushauri wa Kiswahili" icon="🇰🇪" accent="#0d9488">
+          <ResultCard title="Swahili · Local Advisory" icon="🌍" accent="#0d9488">
             <p className="report-text swahili-text">{report.swahili_report}</p>
           </ResultCard>
 

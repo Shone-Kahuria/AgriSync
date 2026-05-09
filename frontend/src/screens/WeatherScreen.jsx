@@ -1,19 +1,19 @@
 import { useState } from "react";
 
 const FORECAST = [
-  { day: "MON", emoji: "☀️",  hi: 24, lo: 14, rain: "5%",  today: false },
-  { day: "TUE", emoji: "⛅",  hi: 22, lo: 13, rain: "20%", today: true  },
-  { day: "WED", emoji: "🌧️", hi: 18, lo: 12, rain: "75%", today: false },
-  { day: "THU", emoji: "🌦️", hi: 20, lo: 13, rain: "45%", today: false },
-  { day: "FRI", emoji: "⛅",  hi: 23, lo: 14, rain: "15%", today: false },
-  { day: "SAT", emoji: "☀️",  hi: 26, lo: 15, rain: "5%",  today: false },
-  { day: "SUN", emoji: "☀️",  hi: 27, lo: 15, rain: "0%",  today: false },
+  { day: "MON", emoji: "☀️",  hi: 28, lo: 18, rain: "5%",  today: false },
+  { day: "TUE", emoji: "⛅",  hi: 26, lo: 17, rain: "20%", today: true  },
+  { day: "WED", emoji: "🌧️", hi: 22, lo: 16, rain: "75%", today: false },
+  { day: "THU", emoji: "🌦️", hi: 24, lo: 17, rain: "45%", today: false },
+  { day: "FRI", emoji: "⛅",  hi: 27, lo: 18, rain: "15%", today: false },
+  { day: "SAT", emoji: "☀️",  hi: 30, lo: 19, rain: "5%",  today: false },
+  { day: "SUN", emoji: "☀️",  hi: 31, lo: 20, rain: "0%",  today: false },
 ];
 
 const FARM_TIPS = [
   {
     icon: "🌱",
-    text: "Tuesday morning is ideal for transplanting seedlings — moderate temperatures and low wind before tomorrow's rains.",
+    text: "Tuesday morning is ideal for transplanting seedlings — moderate temperatures before tomorrow's rains.",
   },
   {
     icon: "💊",
@@ -21,28 +21,49 @@ const FARM_TIPS = [
   },
   {
     icon: "💧",
-    text: "Heavy rains Wednesday — delay irrigation and check drainage channels to prevent waterlogging.",
+    text: "Heavy rains Wednesday — delay irrigation and check drainage channels to prevent waterlogging and root rot.",
   },
 ];
 
 const PLANTING_CALENDAR = [
-  { crop: "Maize",       window: "Mar – May",  progress: 0.9,  color: "#fbbf24" },
-  { crop: "Beans",       window: "Mar – Apr",  progress: 0.7,  color: "#22c55e" },
-  { crop: "Tomato",      window: "Feb – Apr",  progress: 0.5,  color: "#ef4444" },
-  { crop: "Potato",      window: "Apr – Jun",  progress: 0.85, color: "#a78bfa" },
-  { crop: "Kale",        window: "Year-round", progress: 1.0,  color: "#34d399" },
-  { crop: "Sweet Potato",window: "Mar – Jun",  progress: 0.6,  color: "#fb923c" },
-  { crop: "Sorghum",     window: "Apr – May",  progress: 0.45, color: "#facc15" },
-  { crop: "Cassava",     window: "Apr – Jun",  progress: 0.4,  color: "#60a5fa" },
+  { crop: "Maize",        window: "Mar – May",  progress: 0.9,  color: "#fbbf24" },
+  { crop: "Cassava",      window: "Apr – Jun",  progress: 0.8,  color: "#60a5fa" },
+  { crop: "Beans",        window: "Mar – Apr",  progress: 0.7,  color: "#22c55e" },
+  { crop: "Tomato",       window: "Feb – Apr",  progress: 0.5,  color: "#ef4444" },
+  { crop: "Potato",       window: "Apr – Jun",  progress: 0.85, color: "#a78bfa" },
+  { crop: "Sorghum",      window: "Apr – May",  progress: 0.45, color: "#facc15" },
+  { crop: "Sweet Potato", window: "Mar – Jun",  progress: 0.6,  color: "#fb923c" },
+  { crop: "Groundnut",    window: "May – Jun",  progress: 0.35, color: "#f59e0b" },
 ];
 
-const LOCATIONS = [
-  "Nakuru", "Nairobi", "Kisumu", "Eldoret",
-  "Meru", "Nyeri", "Kakamega", "Kitale",
+const REGION_GROUPS = [
+  {
+    group: "East Africa",
+    locs: ["Nairobi, Kenya", "Kampala, Uganda", "Dar es Salaam, Tanzania",
+           "Addis Ababa, Ethiopia", "Kigali, Rwanda", "Mombasa, Kenya"],
+  },
+  {
+    group: "West Africa",
+    locs: ["Lagos, Nigeria", "Accra, Ghana", "Dakar, Senegal",
+           "Abuja, Nigeria", "Kumasi, Ghana"],
+  },
+  {
+    group: "Southern Africa",
+    locs: ["Johannesburg, South Africa", "Cape Town, South Africa",
+           "Lusaka, Zambia", "Harare, Zimbabwe", "Blantyre, Malawi"],
+  },
+  {
+    group: "North Africa",
+    locs: ["Cairo, Egypt", "Casablanca, Morocco", "Tunis, Tunisia"],
+  },
+  {
+    group: "Central Africa",
+    locs: ["Kinshasa, DRC", "Douala, Cameroon", "Luanda, Angola"],
+  },
 ];
 
 export default function WeatherScreen({ user }) {
-  const [location, setLocation] = useState(user?.location || "Nakuru");
+  const [location, setLocation] = useState(user?.location || "Nairobi, Kenya");
 
   return (
     <div style={{ paddingBottom: 8 }}>
@@ -57,21 +78,25 @@ export default function WeatherScreen({ user }) {
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         >
-          {LOCATIONS.map((l) => <option key={l}>{l}</option>)}
+          {REGION_GROUPS.map((g) => (
+            <optgroup key={g.group} label={g.group}>
+              {g.locs.map((l) => <option key={l}>{l}</option>)}
+            </optgroup>
+          ))}
         </select>
       </div>
 
       {/* Current weather hero */}
       <div className="weather-hero">
         <span className="weather-hero-emoji">☁️</span>
-        <p className="weather-location">📍 {location} · Kenya</p>
-        <p className="weather-temp">22°</p>
+        <p className="weather-location">📍 {location}</p>
+        <p className="weather-temp">26°</p>
         <p className="weather-cond">Partly Cloudy</p>
         <div className="weather-stats">
           <span className="weather-stat">💧 Humidity <strong>68%</strong></span>
-          <span className="weather-stat">💨 Wind <strong>12 km/h</strong></span>
+          <span className="weather-stat">💨 Wind <strong>14 km/h</strong></span>
           <span className="weather-stat">🌧️ Rain <strong>20%</strong></span>
-          <span className="weather-stat">☀️ UV Index <strong>6</strong></span>
+          <span className="weather-stat">☀️ UV Index <strong>7</strong></span>
         </div>
       </div>
 
@@ -108,11 +133,7 @@ export default function WeatherScreen({ user }) {
               <div className="planting-bar">
                 <div
                   className="planting-fill"
-                  style={{
-                    width: `${p.progress * 100}%`,
-                    background: p.color,
-                    opacity: 0.85,
-                  }}
+                  style={{ width: `${p.progress * 100}%`, background: p.color, opacity: 0.85 }}
                 />
               </div>
               <span className="planting-window">{p.window}</span>
@@ -121,39 +142,36 @@ export default function WeatherScreen({ user }) {
         </div>
       </div>
 
-      {/* Seasonal overview */}
+      {/* African seasonal overview */}
       <div className="card" style={{ marginTop: 4 }}>
         <div
           className="card-header"
           style={{ background: "#eff6ff", borderBottom: "1px solid #bfdbfe" }}
         >
           <span className="card-header-icon">🗓️</span>
-          <span className="card-title" style={{ color: "#1d4ed8" }}>Kenya Growing Seasons</span>
+          <span className="card-title" style={{ color: "#1d4ed8" }}>African Growing Seasons</span>
         </div>
         <div className="card-body">
           {[
-            { season: "Long Rains (MAR–MAY)", crops: "Maize, Beans, Potatoes, Tomatoes", color: "#22c55e" },
-            { season: "Short Rains (OCT–DEC)", crops: "Sorghum, Cowpeas, Sweet Potatoes", color: "#3b82f6" },
-            { season: "Dry Season (JAN–FEB, JUN–SEP)", crops: "Irrigated Kale, Onions, Capsicum", color: "#f59e0b" },
+            { season: "East Africa — Long Rains (MAR–MAY)",   crops: "Maize, Beans, Potatoes, Tomatoes, Cassava",         color: "#22c55e" },
+            { season: "West Africa — Main Season (APR–JUL)",  crops: "Maize, Cassava, Groundnut, Rice, Sorghum",          color: "#f59e0b" },
+            { season: "Southern Africa — Rains (NOV–MAR)",    crops: "Maize, Sorghum, Sunflower, Cotton, Sweet Potato",   color: "#3b82f6" },
+            { season: "North Africa — Winter (OCT–APR)",      crops: "Wheat, Barley, Vegetables, Citrus, Olives",         color: "#8b5cf6" },
+            { season: "Dry Season (irrigated) — Year-round",  crops: "Kale, Onions, Capsicum, Tomatoes, Leafy greens",    color: "#d97706" },
           ].map((s) => (
             <div
               key={s.season}
-              style={{
-                display: "flex", gap: 12, alignItems: "flex-start",
-                padding: "10px 0", borderBottom: "1px solid var(--n100)",
-              }}
+              style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "10px 0", borderBottom: "1px solid var(--n100)" }}
             >
               <div style={{ width: 4, borderRadius: 2, background: s.color, alignSelf: "stretch", flexShrink: 0 }} />
               <div>
-                <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--n800)", marginBottom: 2 }}>
-                  {s.season}
-                </p>
+                <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--n800)", marginBottom: 2 }}>{s.season}</p>
                 <p style={{ fontSize: 12, color: "var(--n500)", lineHeight: 1.5 }}>{s.crops}</p>
               </div>
             </div>
           ))}
           <div style={{ padding: "10px 0 0", fontSize: 11, color: "var(--n400)", lineHeight: 1.5 }}>
-            * Calendar based on Rift Valley highlands. Coastal and arid regions may vary by 2–4 weeks.
+            * Seasons shown are approximate. Local micro-climates and altitude variations may shift windows by 2–6 weeks. Always verify with regional agricultural extension offices.
           </div>
         </div>
       </div>

@@ -1,21 +1,57 @@
 import { useState } from "react";
+import { toast } from "../components/Toast";
 
-const LOCATIONS = [
-  "Nakuru", "Nairobi", "Kisumu", "Eldoret",
-  "Meru", "Nyeri", "Kakamega", "Kitale", "Machakos", "Thika",
+const REGION_GROUPS = [
+  {
+    group: "East Africa",
+    locs: [
+      "Nairobi, Kenya", "Kampala, Uganda", "Dar es Salaam, Tanzania",
+      "Addis Ababa, Ethiopia", "Kigali, Rwanda", "Mombasa, Kenya",
+      "Nakuru, Kenya", "Kisumu, Kenya", "Arusha, Tanzania", "Eldoret, Kenya",
+    ],
+  },
+  {
+    group: "West Africa",
+    locs: [
+      "Lagos, Nigeria", "Accra, Ghana", "Dakar, Senegal",
+      "Abuja, Nigeria", "Kumasi, Ghana", "Ibadan, Nigeria",
+      "Conakry, Guinea", "Lomé, Togo", "Cotonou, Benin",
+    ],
+  },
+  {
+    group: "Southern Africa",
+    locs: [
+      "Johannesburg, South Africa", "Cape Town, South Africa",
+      "Lusaka, Zambia", "Harare, Zimbabwe", "Blantyre, Malawi",
+      "Maputo, Mozambique", "Gaborone, Botswana", "Lilongwe, Malawi",
+    ],
+  },
+  {
+    group: "North Africa",
+    locs: [
+      "Cairo, Egypt", "Casablanca, Morocco", "Tunis, Tunisia",
+      "Algiers, Algeria", "Khartoum, Sudan",
+    ],
+  },
+  {
+    group: "Central Africa",
+    locs: [
+      "Kinshasa, DRC", "Douala, Cameroon", "Yaoundé, Cameroon",
+      "Luanda, Angola", "Brazzaville, Congo",
+    ],
+  },
 ];
 
 export default function ProfileScreen({ user, onUserUpdate, onLogout }) {
   const [name,     setName]     = useState(user?.name || "");
   const [phone,    setPhone]    = useState(user?.phone || "");
-  const [location, setLocation] = useState(user?.location || "Nakuru");
+  const [location, setLocation] = useState(user?.location || "Nairobi, Kenya");
   const [smsOn,    setSmsOn]    = useState(
     () => localStorage.getItem("agrisync_sms") !== "false"
   );
   const [swahiliOn, setSwahiliOn] = useState(
     () => localStorage.getItem("agrisync_swahili") === "true"
   );
-  const [saved, setSaved] = useState(false);
 
   const diagCount = Number(localStorage.getItem("agrisync_diag_count") || 0);
   const mktCount  = Number(localStorage.getItem("agrisync_mkt_count")  || 0);
@@ -30,14 +66,13 @@ export default function ProfileScreen({ user, onUserUpdate, onLogout }) {
   function handleSave(e) {
     e.preventDefault();
     const updated = { phone, name, location };
-    localStorage.setItem("agrisync_user",  JSON.stringify(updated));
-    localStorage.setItem("agrisync_name",  name);
-    localStorage.setItem("agrisync_phone", phone);
-    localStorage.setItem("agrisync_sms",   String(smsOn));
+    localStorage.setItem("agrisync_user",    JSON.stringify(updated));
+    localStorage.setItem("agrisync_name",    name);
+    localStorage.setItem("agrisync_phone",   phone);
+    localStorage.setItem("agrisync_sms",     String(smsOn));
     localStorage.setItem("agrisync_swahili", String(swahiliOn));
     onUserUpdate?.(updated);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    toast.success("Profile saved!", "Your changes have been applied.");
   }
 
   function handleLogout() {
@@ -93,7 +128,7 @@ export default function ProfileScreen({ user, onUserUpdate, onLogout }) {
               <label className="form-label">Full name</label>
               <input
                 className="form-input"
-                placeholder="e.g. Wanjiku Kamau"
+                placeholder="e.g. Amara Diallo"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -115,17 +150,15 @@ export default function ProfileScreen({ user, onUserUpdate, onLogout }) {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               >
-                {LOCATIONS.map((l) => <option key={l}>{l}</option>)}
+                {REGION_GROUPS.map((g) => (
+                  <optgroup key={g.group} label={g.group}>
+                    {g.locs.map((l) => <option key={l}>{l}</option>)}
+                  </optgroup>
+                ))}
               </select>
             </div>
           </div>
         </div>
-
-        {saved && (
-          <div className="report-confirm" style={{ marginBottom: 14 }}>
-            ✓ Profile saved successfully.
-          </div>
-        )}
 
         <button type="submit" className="btn btn-primary" style={{ marginBottom: 14 }}>
           Save Changes
@@ -151,8 +184,8 @@ export default function ProfileScreen({ user, onUserUpdate, onLogout }) {
 
         <div className="profile-row">
           <div>
-            <p className="profile-row-label">🇰🇪 Swahili First</p>
-            <p className="profile-row-sub">Show Swahili summaries before English</p>
+            <p className="profile-row-label">🌍 Local Language First</p>
+            <p className="profile-row-sub">Show local language summaries before English</p>
           </div>
           <label className="toggle-switch">
             <input type="checkbox" checked={swahiliOn} onChange={toggleSwahili} />
@@ -170,8 +203,9 @@ export default function ProfileScreen({ user, onUserUpdate, onLogout }) {
           { label: "Version",      value: "1.0.0" },
           { label: "AI Model",     value: "Llama 3.2 Vision" },
           { label: "GPU Backend",  value: "AMD MI300X / ROCm" },
-          { label: "Market Data",  value: "KACE · WFP" },
-          { label: "Languages",    value: "English + Swahili" },
+          { label: "Market Data",  value: "FAO · WFP · EAGC" },
+          { label: "Languages",    value: "English + Local Languages" },
+          { label: "Coverage",     value: "54 African Nations" },
           { label: "Built for",    value: "AMD Hackathon 2026" },
         ].map(({ label, value }) => (
           <div key={label} className="profile-row">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const BADGES = ["⚡ AMD MI300X", "🇰🇪 Built for Kenya", "🏆 Hackathon 2026"];
+const BADGES = ["⚡ AMD MI300X", "🌍 Built for Africa", "🏆 Hackathon 2026"];
 
 export default function SplashScreen({ onDone }) {
   const [phase, setPhase] = useState("in"); // "in" → "out"

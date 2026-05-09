@@ -6,6 +6,7 @@ const DISEASES = [
     icon: "🌽",
     name: "Maize Lethal Necrosis (MLN)",
     swahili: "Ugonjwa wa Mahindi wa Mlipuko",
+    region: "East Africa",
     crops: ["Maize"],
     severity: "high",
     symptoms: "Chlorotic (yellow-green) streaking from leaf margins, mosaic patterns, premature plant death. Plants may die before tasselling. All leaves affected from the oldest upward.",
@@ -19,6 +20,7 @@ const DISEASES = [
     icon: "🍅",
     name: "Tomato Late Blight",
     swahili: "Kuoza kwa Nyanya (Late Blight)",
+    region: "Pan-Africa",
     crops: ["Tomato", "Potato"],
     severity: "high",
     symptoms: "Water-soaked, irregularly shaped lesions on leaves — turn dark brown/black. White fuzzy growth on underside of leaves in humid conditions. Fruit shows firm brown rot.",
@@ -32,6 +34,7 @@ const DISEASES = [
     icon: "🍌",
     name: "Banana Xanthomonas Wilt (BXW)",
     swahili: "Ugonjwa wa Ndizi (Bukenya)",
+    region: "East & Central Africa",
     crops: ["Banana"],
     severity: "high",
     symptoms: "Yellow wilting of leaves starting from the inner crown. Yellow or brown ooze from cut stems. Premature ripening of fruit; internal browning of banana flesh.",
@@ -45,6 +48,7 @@ const DISEASES = [
     icon: "☕",
     name: "Coffee Berry Disease (CBD)",
     swahili: "Ugonjwa wa Kahawa (CBD)",
+    region: "East Africa",
     crops: ["Coffee"],
     severity: "medium",
     symptoms: "Dark sunken lesions on green berries. Premature berry drop. Mummified black berries remaining on the branch. Lesions on stems in severe infections.",
@@ -55,9 +59,66 @@ const DISEASES = [
   },
   {
     id: 5,
+    icon: "🍠",
+    name: "Cassava Mosaic Disease (CMD)",
+    swahili: "Ugonjwa wa Muhogo (Mozaiki)",
+    region: "Sub-Saharan Africa",
+    crops: ["Cassava"],
+    severity: "high",
+    symptoms: "Mosaic and chlorotic patterns on leaves — yellow-green mottling. Leaf distortion, reduced leaf size, stunted plant growth. Severely affected plants produce undersized tubers.",
+    causes: "Cassava Mosaic Begomoviruses (CMBVs) transmitted by the whitefly Bemisia tabaci. Also spread through infected stem cuttings. Pandemics have caused massive yield losses across Africa.",
+    prevention: "Use virus-free, certified stem cuttings. Plant CMD-resistant varieties (e.g. NASE 14, TME 419). Rogue out infected plants early. Control whitefly populations with yellow sticky traps.",
+    treatments: ["Remove and burn infected plants immediately", "Apply neonicotinoid insecticides to control whitefly vectors", "Source clean planting material from certified nurseries"],
+    pcpb: "approved",
+  },
+  {
+    id: 6,
+    icon: "🌾",
+    name: "Fall Armyworm (FAW)",
+    swahili: "Viwavi Jeshi (Fall Armyworm)",
+    region: "Pan-Africa",
+    crops: ["Maize", "Sorghum", "Wheat", "Rice"],
+    severity: "high",
+    symptoms: "Irregular holes and 'window pane' feeding on leaves. Frass (sawdust-like excrement) in leaf whorls. Defoliation of young plants. In maize, larvae burrow into cobs causing direct grain loss.",
+    causes: "Moth Spodoptera frugiperda, an invasive pest first detected in Africa in 2016. Now present in all 54 African nations. Adults migrate hundreds of kilometres on wind currents.",
+    prevention: "Early scouting — check whorls of young plants twice weekly. Use push-pull intercropping with Desmodium and Napier grass. Release natural enemies (parasitoid wasps). Pheromone traps for adult monitoring.",
+    treatments: ["Emamectin benzoate (Escort) applied to whorls at first instar larvae", "Spinetoram (Radiant) — IRAC Group 5 to manage resistance", "Bacillus thuringiensis (Bt) biopesticide for organic systems"],
+    pcpb: "approved",
+  },
+  {
+    id: 7,
+    icon: "🥜",
+    name: "Groundnut Rosette Disease",
+    swahili: "Ugonjwa wa Karanga (Rosette)",
+    region: "West & East Africa",
+    crops: ["Groundnut"],
+    severity: "high",
+    symptoms: "Chlorotic rosette: yellow-green mottling, bushy appearance from shortened internodes. Severely stunted plants. Chlorotic form (yellow) and green form (normal-coloured leaves, mosaic symptoms).",
+    causes: "Groundnut Rosette Virus (GRV) complex, transmitted by aphid Aphis craccivora. Satellite RNA and a helper virus act together. Spreads very rapidly in dense plantings.",
+    prevention: "Early planting at onset of rains to escape peak aphid pressure. Use resistant varieties (RG 1, Serenut series). Maintain plant spacing to reduce aphid movement. Intercrop with cereals as barrier.",
+    treatments: ["No curative chemical treatment — prevention is key", "Apply dimethoate insecticide to manage aphid vectors", "Remove and destroy infected plants to limit spread"],
+    pcpb: "unverified",
+  },
+  {
+    id: 8,
+    icon: "🌾",
+    name: "Wheat Stem Rust (Ug99)",
+    swahili: "Kutu ya Ngano",
+    region: "East Africa",
+    crops: ["Wheat"],
+    severity: "high",
+    symptoms: "Reddish-brown pustules on stems, leaves, and leaf sheaths. Pustules rupture to release brick-red spores. Severely infected plants lodge (fall over). Shrivelled grain.",
+    causes: "Fungus Puccinia graminis f. sp. tritici. Ug99 race is particularly aggressive. Spread by wind over long distances. Favoured by temperatures 15–25°C with dew.",
+    prevention: "Plant Ug99-resistant varieties (e.g. Fahari, Farida). Avoid late planting. Monitor regional rust alerts from CIMMYT / national research institutes.",
+    treatments: ["Propiconazole (Tilt 250 EC) — apply at first sign of infection", "Tebuconazole at heading stage", "Epoxiconazole + carbendazim for severe cases"],
+    pcpb: "approved",
+  },
+  {
+    id: 9,
     icon: "🥔",
     name: "Potato Early Blight",
     swahili: "Ugonjwa wa Viazi (Early Blight)",
+    region: "East & Southern Africa",
     crops: ["Potato", "Tomato"],
     severity: "medium",
     symptoms: "Brown circular target-like spots (concentric rings) on older leaves. Yellow area surrounds spots. Defoliation from the bottom up. Reduced tuber size if severe.",
@@ -67,23 +128,25 @@ const DISEASES = [
     pcpb: "approved",
   },
   {
-    id: 6,
+    id: 10,
     icon: "🌾",
-    name: "Wheat Stem Rust",
-    swahili: "Kutu ya Ngano",
-    crops: ["Wheat"],
+    name: "Striga (Witchweed)",
+    swahili: "Kayamba / Gugu la Kunyonya",
+    region: "Sub-Saharan Africa",
+    crops: ["Maize", "Sorghum", "Millet", "Rice"],
     severity: "high",
-    symptoms: "Reddish-brown pustules on stems, leaves, and leaf sheaths. Pustules rupture to release brick-red spores. Severely infected plants lodge (fall over). Shrivelled grain.",
-    causes: "Fungus Puccinia graminis f. sp. tritici. Ug99 race is particularly aggressive. Spread by wind over long distances. Favoured by temperatures 15–25°C with dew.",
-    prevention: "Plant Ug99-resistant varieties (e.g. Fahari, Farida). Avoid late planting. Monitor regional rust alerts from KARI/KEPHIS.",
-    treatments: ["Propiconazole (Tilt 250 EC) — apply at first sign of infection", "Tebuconazole at heading stage", "Epoxiconazole + carbendazim (Opus Team) for severe cases"],
-    pcpb: "approved",
+    symptoms: "Yellowing and wilting of host crop despite adequate moisture. Severely stunted growth, yellowing leaves, premature senescence. Small purple, pink or white flowers emerge from soil near crop roots.",
+    causes: "Parasitic plants (Striga hermonthica, S. asiatica, S. gesnerioides) attach to crop roots, draining water and nutrients. Seeds persist in soil for 15–20 years. Infests an estimated 21 million hectares across Africa.",
+    prevention: "Use IMAZAPYR-resistant maize varieties (IR Maize) treated with low-dose imazapyr. Practice push-pull with Desmodium (green manure that suppresses Striga germination). Intercrop with trap crops (Sorghum bicolor cv. SRN39).",
+    treatments: ["Hand-pull Striga before flowering to prevent seed set", "Apply low-dose imazapyr herbicide with IR maize seed treatment", "Apply Fusarium oxysporum f. sp. strigae (biological control)"],
+    pcpb: "restricted",
   },
   {
-    id: 7,
+    id: 11,
     icon: "🫘",
     name: "Bean Angular Leaf Spot",
     swahili: "Madoa ya Maharagwe",
+    region: "East & Central Africa",
     crops: ["Beans"],
     severity: "medium",
     symptoms: "Angular, brown to grey spots on leaves bounded by leaf veins. Spots have yellow halos. Brown lesions on pods and seeds. Defoliation in severe cases.",
@@ -93,30 +156,18 @@ const DISEASES = [
     pcpb: "approved",
   },
   {
-    id: 8,
-    icon: "🥬",
-    name: "Kale Black Rot",
-    swahili: "Kuoza kwa Sukuma Wiki",
-    crops: ["Kale", "Cabbage"],
-    severity: "low",
-    symptoms: "V-shaped yellow lesions at leaf margins that turn brown/black. Yellowing progresses from leaf edges inward. Black vascular tissue visible when stem is cut.",
-    causes: "Bacterium Xanthomonas campestris pv. campestris. Seed-borne and soil-borne. Spreads through rain, insects, and contaminated tools.",
-    prevention: "Use hot water-treated seed (50°C for 25 minutes). Practice 2-year rotation with non-crucifer crops. Remove infected plant debris. Avoid overhead irrigation.",
-    treatments: ["Copper-based bactericide spray", "Remove and destroy infected plants", "Improve drainage and reduce leaf wetness"],
-    pcpb: "approved",
-  },
-  {
-    id: 9,
-    icon: "🧅",
-    name: "Onion Purple Blotch",
-    swahili: "Madoa ya Vitunguu",
-    crops: ["Onion"],
-    severity: "medium",
-    symptoms: "Small white spots with purple centres on leaves and scapes. Lesions enlarge with yellow/purple margins. Severely affected leaves collapse. Reduced bulb size.",
-    causes: "Fungus Alternaria porri. Favoured by warm humid conditions and temperatures 25–30°C. Spreads by wind and rain splash.",
-    prevention: "Plant resistant varieties. Maintain good plant spacing. Avoid excessive nitrogen fertilizer. Apply balanced nutrition including potassium and calcium.",
-    treatments: ["Iprodione (Rovral) fungicide spray", "Chlorothalonil as protective spray", "Mancozeb + metalaxyl for early infections"],
-    pcpb: "approved",
+    id: 12,
+    icon: "🌾",
+    name: "Rice Yellow Mottle Virus (RYMV)",
+    swahili: "Ugonjwa wa Njano wa Mchele",
+    region: "West & East Africa",
+    crops: ["Rice"],
+    severity: "high",
+    symptoms: "Yellowing and mottling of leaves starting with youngest leaves. Severe stunting. Spikelet sterility leading to empty grains. Plants may die in very susceptible varieties.",
+    causes: "Rice Yellow Mottle Sobemovirus. Transmitted by insects (beetles, grasshoppers) and contact with infected plant sap. Persists in weed hosts. Major constraint to rice production in sub-Saharan Africa.",
+    prevention: "Plant resistant varieties (e.g. WITA 4, NERICA). Control insect vectors. Avoid waterlogging that encourages vector activity. Remove weed hosts from field margins.",
+    treatments: ["No curative treatment — management is preventive", "Rogue infected plants in early growth stages", "Spray pyrethroid insecticides to reduce vector populations"],
+    pcpb: "unverified",
   },
 ];
 
@@ -127,12 +178,15 @@ const SEV_STYLE = {
 };
 
 const PCPB_STYLE = {
-  approved:   { bg: "#dcfce7", color: "#15803d", label: "✓ PCPB Approved" },
+  approved:   { bg: "#dcfce7", color: "#15803d", label: "✓ Reg. Approved" },
   restricted: { bg: "#fee2e2", color: "#dc2626", label: "⚠ Restricted" },
-  unverified: { bg: "#fef3c7", color: "#d97706", label: "? Unverified" },
+  unverified: { bg: "#fef3c7", color: "#d97706", label: "? Verify Locally" },
 };
 
-const ALL_CROPS = ["All", "Maize", "Tomato", "Potato", "Beans", "Coffee", "Banana", "Wheat", "Kale", "Onion"];
+const ALL_CROPS = [
+  "All", "Maize", "Tomato", "Cassava", "Potato", "Beans",
+  "Coffee", "Banana", "Wheat", "Groundnut", "Rice", "Sorghum",
+];
 
 export default function CropGuideScreen() {
   const [query,    setQuery]    = useState("");
@@ -145,7 +199,8 @@ export default function CropGuideScreen() {
       !query ||
       d.name.toLowerCase().includes(query.toLowerCase()) ||
       d.crops.some((c) => c.toLowerCase().includes(query.toLowerCase())) ||
-      d.symptoms.toLowerCase().includes(query.toLowerCase());
+      d.symptoms.toLowerCase().includes(query.toLowerCase()) ||
+      d.region.toLowerCase().includes(query.toLowerCase());
     return matchFilter && matchQuery;
   });
 
@@ -153,7 +208,7 @@ export default function CropGuideScreen() {
     <div style={{ paddingBottom: 8 }}>
       <div className="page-header">
         <h2 className="page-title">Crop Disease Guide</h2>
-        <p className="page-sub">Searchable library of {DISEASES.length} diseases affecting Kenyan crops</p>
+        <p className="page-sub">Searchable library of {DISEASES.length} diseases affecting African crops</p>
       </div>
 
       {/* Search */}
@@ -161,7 +216,7 @@ export default function CropGuideScreen() {
         <span className="guide-search-icon">🔍</span>
         <input
           className="guide-search"
-          placeholder="Search by disease, crop, or symptom…"
+          placeholder="Search by disease, crop, symptom, or region…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -204,30 +259,25 @@ export default function CropGuideScreen() {
             <div
               className="guide-entry-header"
               onClick={() => setExpanded(open ? null : d.id)}
+              role="button"
+              aria-expanded={open}
             >
               <span className="guide-entry-icon">{d.icon}</span>
               <div className="guide-entry-meta">
                 <p className="guide-entry-name">{d.name}</p>
                 <div className="guide-entry-tags">
                   {d.crops.map((c) => (
-                    <span
-                      key={c}
-                      className="guide-entry-tag"
-                      style={{ background: "var(--n100)", color: "var(--n600)" }}
-                    >
+                    <span key={c} className="guide-entry-tag" style={{ background: "var(--n100)", color: "var(--n600)" }}>
                       {c}
                     </span>
                   ))}
-                  <span
-                    className="guide-entry-tag"
-                    style={{ background: sev.bg, color: sev.color }}
-                  >
+                  <span className="guide-entry-tag" style={{ background: "#f0fdf4", color: "#15803d" }}>
+                    🌍 {d.region}
+                  </span>
+                  <span className="guide-entry-tag" style={{ background: sev.bg, color: sev.color }}>
                     {sev.label}
                   </span>
-                  <span
-                    className="guide-entry-tag"
-                    style={{ background: pcpb.bg, color: pcpb.color }}
-                  >
+                  <span className="guide-entry-tag" style={{ background: pcpb.bg, color: pcpb.color }}>
                     {pcpb.label}
                   </span>
                 </div>
@@ -237,9 +287,11 @@ export default function CropGuideScreen() {
 
             {open && (
               <div className="guide-entry-body">
-                <p style={{ fontSize: 11.5, color: "var(--teal)", fontStyle: "italic", marginBottom: 10, fontWeight: 600 }}>
-                  🇰🇪 {d.swahili}
-                </p>
+                {d.swahili && (
+                  <p style={{ fontSize: 11.5, color: "var(--teal)", fontStyle: "italic", marginBottom: 10, fontWeight: 600 }}>
+                    🌍 {d.swahili}
+                  </p>
+                )}
 
                 <p className="guide-section-title">Symptoms</p>
                 <p className="guide-section-text">{d.symptoms}</p>
@@ -253,9 +305,7 @@ export default function CropGuideScreen() {
                 <p className="guide-section-title">Treatments</p>
                 <ul style={{ paddingLeft: 18, margin: 0 }}>
                   {d.treatments.map((t, i) => (
-                    <li key={i} style={{ fontSize: 13, color: "var(--n700)", lineHeight: 1.7 }}>
-                      {t}
-                    </li>
+                    <li key={i} style={{ fontSize: 13, color: "var(--n700)", lineHeight: 1.7 }}>{t}</li>
                   ))}
                 </ul>
               </div>
@@ -265,11 +315,8 @@ export default function CropGuideScreen() {
       })}
 
       {/* Footer note */}
-      <div
-        className="disclaimer-box"
-        style={{ marginTop: 8 }}
-      >
-        ℹ️ All treatments listed are PCPB-referenced unless marked otherwise. Always confirm current registration with the Kenya Pest Control Products Board before purchase. Consult a certified agronomist for complex cases.
+      <div className="disclaimer-box" style={{ marginTop: 8 }}>
+        ℹ️ Treatment status is indicative only. Always confirm registration with your country's national regulatory body (e.g. PCPB-Kenya, NAQS-Nigeria, EPA-Ghana) before purchase. Consult a certified agronomist for complex cases.
       </div>
     </div>
   );

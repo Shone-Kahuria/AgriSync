@@ -2,21 +2,25 @@ import { useState, useEffect } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ResultCard from "../components/ResultCard";
 import { arbitrage, getCrops } from "../api/client";
+import { toast } from "../components/Toast";
 
 const FALLBACK_CROPS = [
   "Maize", "Tomato", "Beans", "Potato", "Cassava", "Coffee",
   "Kale", "Sweet Potato", "Sorghum", "Banana", "Wheat", "Onion",
 ];
-const CITIES = [
-  "Nakuru", "Nairobi", "Kisumu", "Eldoret",
-  "Meru", "Nyeri", "Kakamega", "Kitale",
+const CITY_GROUPS = [
+  { group: "East Africa",     cities: ["Nairobi, KE", "Kampala, UG", "Dar es Salaam, TZ", "Nakuru, KE", "Kisumu, KE", "Mombasa, KE", "Arusha, TZ", "Eldoret, KE"] },
+  { group: "West Africa",     cities: ["Lagos, NG", "Accra, GH", "Abuja, NG", "Dakar, SN", "Kumasi, GH", "Ibadan, NG"] },
+  { group: "Southern Africa", cities: ["Johannesburg, ZA", "Cape Town, ZA", "Lusaka, ZM", "Harare, ZW", "Blantyre, MW"] },
+  { group: "North Africa",    cities: ["Cairo, EG", "Casablanca, MA", "Khartoum, SD"] },
+  { group: "Central Africa",  cities: ["Kinshasa, CD", "Douala, CM", "Luanda, AO"] },
 ];
 
 export default function MarketScreen({ onResult }) {
   const [crops, setCrops]   = useState(FALLBACK_CROPS);
   const [crop, setCrop]     = useState("Maize");
   const [volume, setVolume] = useState("");
-  const [origin, setOrigin] = useState("Nakuru");
+  const [origin, setOrigin] = useState("Nairobi, KE");
   const [loading, setLoading] = useState(false);
   const [result, setResult]   = useState(null);
   const [error, setError]     = useState(null);
@@ -38,6 +42,7 @@ export default function MarketScreen({ onResult }) {
       const data = await arbitrage(crop, Number(volume), origin);
       setResult(data);
       onResult?.(data);
+      toast.success("Best market found!", `${data.best_market} offers the highest net profit.`);
     } catch {
       setError("Could not fetch market prices — please try again.");
     } finally {
@@ -80,7 +85,11 @@ export default function MarketScreen({ onResult }) {
             <div className="form-group">
               <label className="form-label">📍 Your location</label>
               <select className="form-select" value={origin} onChange={(e) => setOrigin(e.target.value)}>
-                {CITIES.map((c) => <option key={c}>{c}</option>)}
+                {CITY_GROUPS.map((g) => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.cities.map((c) => <option key={c}>{c}</option>)}
+                </optgroup>
+              ))}
               </select>
             </div>
           </div>
@@ -113,7 +122,7 @@ export default function MarketScreen({ onResult }) {
             <span className="best-trophy">🏆</span>
           </div>
 
-          <ResultCard title="Kiswahili · Swahili" icon="🇰🇪" accent="#0d9488">
+          <ResultCard title="Swahili · Local Advisory" icon="🌍" accent="#0d9488">
             <p className="swahili-text">{result.swahili_advice}</p>
           </ResultCard>
 

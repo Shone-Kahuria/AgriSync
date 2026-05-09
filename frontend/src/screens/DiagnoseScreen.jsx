@@ -4,6 +4,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import ResultCard from "../components/ResultCard";
 import GpuStatsPanel from "../components/GpuStatsPanel";
 import { diagnose, fileToBase64, reportDiagnosis } from "../api/client";
+import { toast } from "../components/Toast";
 
 const SEV = {
   high:   { color: "#dc2626", bg: "#fee2e2", label: "HIGH SEVERITY" },
@@ -44,6 +45,11 @@ export default function DiagnoseScreen({ onResult }) {
       setInferenceMs(performance.now() - t0);
       setResult(data);
       onResult?.(data);
+      if (!data.uncertain) {
+        toast.success("Diagnosis complete!", `${data.disease_name} detected.`);
+      } else {
+        toast.warning("Image unclear", "Retake in natural daylight for best results.");
+      }
     } catch {
       setError("Analysis failed — please retake photo in better light.");
     } finally {
@@ -136,7 +142,7 @@ export default function DiagnoseScreen({ onResult }) {
                 <p className="gpu-note">⚡ {result.gpu_used}</p>
               </ResultCard>
 
-              <ResultCard title="Kiswahili · Swahili" icon="🇰🇪" accent="#0d9488">
+              <ResultCard title="Swahili · Local Advisory" icon="🌍" accent="#0d9488">
                 <p className="swahili-text">{result.swahili_summary}</p>
               </ResultCard>
 
