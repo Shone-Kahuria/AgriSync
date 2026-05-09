@@ -63,6 +63,18 @@ def model_loaded() -> bool:
 # Model loaders
 # ---------------------------------------------------------------------------
 
+def _detect_gpu_label() -> str:
+    import torch
+    if not torch.cuda.is_available():
+        return "CPU"
+    name = torch.cuda.get_device_name(0).lower()
+    if "mi300" in name:
+        return "AMD MI300X (ROCm)"
+    if "mi250" in name or "mi200" in name:
+        return "AMD MI250 (ROCm)"
+    return torch.cuda.get_device_name(0)
+
+
 def _load_llava():
     global _llava_model, _llava_processor, _gpu_label
     if _llava_model is not None:
@@ -71,14 +83,41 @@ def _load_llava():
     from transformers import LlavaProcessor, LlavaForConditionalGeneration
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    _gpu_label = "AMD MI300X (ROCm)" if torch.cuda.is_available() else "CPU"
+    _gpu_label = _detect_gpu_label()
     logger.info("Loading LLaVA-v1.5 on %s", _gpu_label)
+
+    load_kwargs: dict = {}
+    if device == "cuda":
+        try:
+            from transformers import BitsAndBytesConfig
+            load_kwargs["quantization_config"] = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+            )
+            load_kwargs["device_map"] = "auto"
+            logger.info("4-bit quantisation enabled — target VRAM ~3.5 GB")
+        except (ImportError, Exception) as e:
+            logger.warning("bitsandbytes unavailable (%s), falling back to float16", e)
+            load_kwargs["torch_dtype"] = torch.float16
+            load_kwargs["device_map"] = "auto"
+    else:
+        load_kwargs["torch_dtype"] = torch.float32
+
     _llava_processor = LlavaProcessor.from_pretrained(settings.llava_model_id)
-    _llava_model = LlavaForConditionalGeneration.from_pretrained(
-        settings.llava_model_id,
-        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-        device_map=device,
-    )
+    try:
+        _llava_model = LlavaForConditionalGeneration.from_pretrained(
+            settings.llava_model_id, **load_kwargs
+        )
+    except RuntimeError as e:
+        if "out of memory" in str(e).lower():
+            logger.error("VRAM OOM loading LLaVA — try reducing batch size or use CPU fallback")
+            raise RuntimeError(
+                "GPU out of memory loading LLaVA-v1.5. "
+                "Ensure bitsandbytes is installed for 4-bit quantisation."
+            ) from e
+        raise
     logger.info("LLaVA-v1.5 loaded on %s", _gpu_label)
 
 
@@ -90,17 +129,42 @@ def _load_llama32():
     from transformers import MllamaForConditionalGeneration, AutoProcessor
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    _gpu_label = "AMD MI300X (ROCm)" if torch.cuda.is_available() else "CPU"
+    _gpu_label = _detect_gpu_label()
 
-    kwargs = {"token": settings.huggingface_token} if settings.huggingface_token else {}
+    hf_kwargs = {"token": settings.huggingface_token} if settings.huggingface_token else {}
+    load_kwargs: dict = {**hf_kwargs}
+
+    if device == "cuda":
+        try:
+            from transformers import BitsAndBytesConfig
+            load_kwargs["quantization_config"] = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+            )
+            load_kwargs["device_map"] = "auto"
+            logger.info("4-bit quantisation enabled for Llama-3.2 — target VRAM ~5.5 GB")
+        except (ImportError, Exception) as e:
+            logger.warning("bitsandbytes unavailable (%s), falling back to bfloat16", e)
+            load_kwargs["torch_dtype"] = torch.bfloat16
+            load_kwargs["device_map"] = "auto"
+    else:
+        load_kwargs["torch_dtype"] = torch.float32
+
     logger.info("Loading Llama-3.2-11B-Vision-Instruct on %s", _gpu_label)
-    _llama_processor = AutoProcessor.from_pretrained(settings.llama32_model_id, **kwargs)
-    _llama_model = MllamaForConditionalGeneration.from_pretrained(
-        settings.llama32_model_id,
-        torch_dtype=torch.bfloat16 if device == "cuda" else torch.float32,
-        device_map=device,
-        **kwargs,
-    )
+    _llama_processor = AutoProcessor.from_pretrained(settings.llama32_model_id, **hf_kwargs)
+    try:
+        _llama_model = MllamaForConditionalGeneration.from_pretrained(
+            settings.llama32_model_id, **load_kwargs
+        )
+    except RuntimeError as e:
+        if "out of memory" in str(e).lower():
+            raise RuntimeError(
+                "GPU OOM loading Llama-3.2-11B. It needs ~5.5 GB VRAM with 4-bit quant. "
+                "Switch to VISION_MODEL=llava (requires only ~3.5 GB)."
+            ) from e
+        raise
     logger.info("Llama-3.2-11B-Vision loaded on %s", _gpu_label)
 
 
