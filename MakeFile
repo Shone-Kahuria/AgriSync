@@ -1,0 +1,17 @@
+PHONY: dev-backend dev-frontend docker-up docker-down seed test lint
+dev-backend:
+cd backend && USE_MOCK_VISION=true uvicorn app.main:app --reload --port
+8000
+dev-frontend:
+cd frontend && npm run dev
+docker-up:
+cp -n backend/.env.example backend/.env || true
+docker compose up --build
+docker-down:
+docker compose down -v
+seed:
+cd backend && python -m app.db.seed
+test:
+cd backend && USE_MOCK_VISION=true pytest tests/ -v
+lint:
+cd frontend && npm run build

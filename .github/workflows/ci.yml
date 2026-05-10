@@ -1,0 +1,25 @@
+obs:
+ backend-test:
+ runs-on: ubuntu-latest
+ steps:
+ - checkout
+ - setup Python 3.11
+ - pip install -r backend/requirements.txt pytest httpx pytest-asyncio
+ - run: USE_MOCK_VISION=true pytest backend/tests/ -v
+ frontend-lint:
+ runs-on: ubuntu-latest
+ steps:
+ - checkout
+ - setup Node 20
+ - npm ci (in frontend/)
+ - npm run build (confirm Vite build succeeds)
+ docker-smoke:
+ runs-on: ubuntu-latest
+ steps:
+ - checkout
+ - copy backend/.env.example to backend/.env
+ - docker compose up -d --build
+ - wait 15 seconds
+ - curl http://localhost:8000/health → assert 200
+ - curl http://localhost:3000 → assert 200
+ - docker compose down
