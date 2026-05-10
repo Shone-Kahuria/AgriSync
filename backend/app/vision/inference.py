@@ -63,6 +63,12 @@ def model_loaded() -> bool:
 # Model loaders
 # ---------------------------------------------------------------------------
 
+def _is_rocm() -> bool:
+    """True when running on AMD ROCm (HIP) rather than NVIDIA CUDA."""
+    import torch
+    return torch.cuda.is_available() and getattr(torch.version, "hip", None) is not None
+
+
 def _detect_gpu_label() -> str:
     import torch
     if not torch.cuda.is_available():
@@ -88,20 +94,27 @@ def _load_llava():
 
     load_kwargs: dict = {}
     if device == "cuda":
-        try:
-            from transformers import BitsAndBytesConfig
-            load_kwargs["quantization_config"] = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_use_double_quant=True,
-            )
-            load_kwargs["device_map"] = "auto"
-            logger.info("4-bit quantisation enabled — target VRAM ~3.5 GB")
-        except (ImportError, Exception) as e:
-            logger.warning("bitsandbytes unavailable (%s), falling back to float16", e)
+        if _is_rocm():
+            # AMD MI300X: 192 GB HBM3 — float16 fits any model, no quantisation needed
             load_kwargs["torch_dtype"] = torch.float16
             load_kwargs["device_map"] = "auto"
+            logger.info("AMD ROCm detected — loading LLaVA in float16 (no quantisation needed)")
+        else:
+            # NVIDIA: use 4-bit NF4 to fit within 8 GB VRAM
+            try:
+                from transformers import BitsAndBytesConfig
+                load_kwargs["quantization_config"] = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                )
+                load_kwargs["device_map"] = "auto"
+                logger.info("NVIDIA GPU — 4-bit NF4 quantisation enabled (~3.5 GB VRAM)")
+            except (ImportError, Exception) as e:
+                logger.warning("bitsandbytes unavailable (%s), falling back to float16", e)
+                load_kwargs["torch_dtype"] = torch.float16
+                load_kwargs["device_map"] = "auto"
     else:
         load_kwargs["torch_dtype"] = torch.float32
 
@@ -112,10 +125,10 @@ def _load_llava():
         )
     except RuntimeError as e:
         if "out of memory" in str(e).lower():
-            logger.error("VRAM OOM loading LLaVA — try reducing batch size or use CPU fallback")
             raise RuntimeError(
                 "GPU out of memory loading LLaVA-v1.5. "
-                "Ensure bitsandbytes is installed for 4-bit quantisation."
+                "On NVIDIA: ensure bitsandbytes is installed. "
+                "On AMD MI300X this should not occur (192 GB VRAM available)."
             ) from e
         raise
     logger.info("LLaVA-v1.5 loaded on %s", _gpu_label)
@@ -135,20 +148,27 @@ def _load_llama32():
     load_kwargs: dict = {**hf_kwargs}
 
     if device == "cuda":
-        try:
-            from transformers import BitsAndBytesConfig
-            load_kwargs["quantization_config"] = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.bfloat16,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_use_double_quant=True,
-            )
-            load_kwargs["device_map"] = "auto"
-            logger.info("4-bit quantisation enabled for Llama-3.2 — target VRAM ~5.5 GB")
-        except (ImportError, Exception) as e:
-            logger.warning("bitsandbytes unavailable (%s), falling back to bfloat16", e)
+        if _is_rocm():
+            # AMD MI300X: bfloat16 is optimal for Llama on ROCm, no quantisation needed
             load_kwargs["torch_dtype"] = torch.bfloat16
             load_kwargs["device_map"] = "auto"
+            logger.info("AMD ROCm detected — loading Llama-3.2 in bfloat16 (~22 GB VRAM)")
+        else:
+            # NVIDIA: 4-bit NF4 to fit within consumer VRAM budgets
+            try:
+                from transformers import BitsAndBytesConfig
+                load_kwargs["quantization_config"] = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.bfloat16,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                )
+                load_kwargs["device_map"] = "auto"
+                logger.info("NVIDIA GPU — 4-bit NF4 quantisation enabled for Llama-3.2 (~5.5 GB VRAM)")
+            except (ImportError, Exception) as e:
+                logger.warning("bitsandbytes unavailable (%s), falling back to bfloat16", e)
+                load_kwargs["torch_dtype"] = torch.bfloat16
+                load_kwargs["device_map"] = "auto"
     else:
         load_kwargs["torch_dtype"] = torch.float32
 
