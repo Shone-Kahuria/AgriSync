@@ -1,5 +1,81 @@
-{"time":"2026-05-05T04:37:20Z","level":"INFO","logger":"crewai.cli.config","msg":'Using config path: C:\\Users\\LEGION\\.config\\crewai\\settings.json'}
-INFO:     Started server process [33844]
+INFO:     Will watch for changes in these directories: ['C:\\Users\\LEGION\\Desktop\\AgriSync\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [3604] using WatchFiles
+{"time":"2026-05-10T12:35:29Z","level":"INFO","logger":"crewai.cli.config","msg":'Using config path: C:\\Users\\LEGION\\.config\\crewai\\settings.json'}
+INFO:     Started server process [4276]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:63046 - "GET /health HTTP/1.1" 200
+INFO:     127.0.0.1:63124 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:55000 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:51140 - "GET /gpu-info HTTP/1.1" 200
+{"time":"2026-05-10T12:40:54Z","level":"INFO","logger":"agrisync.plant_classifier","msg":'Loading PlantVillage classifier: linkanjarad/mobilenet_v2_1.0_224-fine-tuned-plant-disease-classification'}
+{"time":"2026-05-10T12:40:55Z","level":"INFO","logger":"httpx","msg":'HTTP Request: HEAD https://huggingface.co/linkanjarad/mobilenet_v2_1.0_224-fine-tuned-plant-disease-classification/resolve/main/config.json "HTTP/1.1 401 Unauthorized"'}
+{"time":"2026-05-10T12:40:55Z","level":"WARNING","logger":"agrisync.plant_classifier","msg":"PlantVillage classifier unavailable (linkanjarad/mobilenet_v2_1.0_224-fine-tuned-plant-disease-classification is not a local folder and is not a valid model identifier listed on 'https://huggingface.co/models'\nIf this is a private repository, make sure to pass a token having permission to this repo either by logging in with `hf auth login` or by passing `token=<your_token>`) — will use LLaVA fallback"}
+INFO:     127.0.0.1:51814 - "POST /diagnose HTTP/1.1" 200
+INFO:     127.0.0.1:54588 - "GET /crops HTTP/1.1" 200
+INFO:     127.0.0.1:54791 - "GET /crops HTTP/1.1" 200
+{"time":"2026-05-10T12:41:29Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Sorghum&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:41:30Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Sorghum&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:41:31Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Sorghum&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:41:32Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Sorghum&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:41:33Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Sorghum&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:41:34Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Sorghum&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:41:35Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Sorghum&page=1&format=json "HTTP/1.1 404 Not Found"'}
+INFO:     127.0.0.1:59908 - "POST /arbitrage HTTP/1.1" 200
+{"time":"2026-05-10T12:41:50Z","level":"INFO","logger":"agrisync.orchestrator","msg":'SMS (mock) to +254112172294: AgriSync: Bean Angular Leaf Spot detected. Uza Sorghum Mombasa KES 12,000.'}
+INFO:     127.0.0.1:60836 - "POST /report HTTP/1.1" 200
+INFO:     127.0.0.1:51750 - "POST /farmers/register HTTP/1.1" 201
+INFO:     127.0.0.1:64682 - "GET /diseases HTTP/1.1" 200
+INFO:     127.0.0.1:58608 - "GET /diseases HTTP/1.1" 200
+INFO:     127.0.0.1:59798 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:63579 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:54431 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:56020 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:63824 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:54147 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:58680 - "POST /diagnose HTTP/1.1" 200
+INFO:     127.0.0.1:51236 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:54071 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:54070 - "POST /diagnose HTTP/1.1" 200
+INFO:     127.0.0.1:61963 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:56901 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:56902 - "POST /diagnose HTTP/1.1" 200
+INFO:     127.0.0.1:61539 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:61123 - "GET /crops HTTP/1.1" 200
+INFO:     127.0.0.1:58689 - "GET /crops HTTP/1.1" 200
+{"time":"2026-05-10T12:53:35Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Potatoes%20(Irish)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:53:36Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Potatoes%20(Irish)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:53:37Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Potatoes%20(Irish)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:53:38Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Potatoes%20(Irish)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:53:39Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Potatoes%20(Irish)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:53:40Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Potatoes%20(Irish)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T12:53:44Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Potatoes%20(Irish)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+INFO:     127.0.0.1:63211 - "POST /arbitrage HTTP/1.1" 200
+{"time":"2026-05-10T12:53:54Z","level":"INFO","logger":"agrisync.orchestrator","msg":'SMS (mock) to +254112172294: AgriSync: Maize Gray Leaf Spot detected. Uza Potato Mombasa KES 5,500.'}
+INFO:     127.0.0.1:56596 - "POST /report HTTP/1.1" 200
+INFO:     127.0.0.1:51794 - "POST /farmers/register HTTP/1.1" 201
+INFO:     127.0.0.1:58395 - "GET /diseases HTTP/1.1" 200
+INFO:     127.0.0.1:61981 - "GET /diseases HTTP/1.1" 200
+INFO:     127.0.0.1:54414 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:61229 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:52835 - "POST /diagnose HTTP/1.1" 200
+INFO:     127.0.0.1:57977 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:52615 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:52616 - "POST /diagnose HTTP/1.1" 200
+INFO:     127.0.0.1:51346 - "GET /gpu-info HTTP/1.1" 200
+INFO:     127.0.0.1:53019 - "GET /crops HTTP/1.1" 200
+INFO:     127.0.0.1:59714 - "GET /crops HTTP/1.1" 200
+{"time":"2026-05-10T13:10:37Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Maize%20(white)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T13:10:38Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Maize%20(white)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T13:10:39Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Maize%20(white)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T13:10:40Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Maize%20(white)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T13:10:41Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Maize%20(white)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T13:10:41Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Maize%20(white)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+{"time":"2026-05-10T13:10:42Z","level":"INFO","logger":"httpx","msg":'HTTP Request: GET https://api.vam.wfp.org/api/vam-data-bridges/1.2.0/MarketPrices/PriceWeekly?CountryCode=KEN&CommodityName=Maize%20(white)&page=1&format=json "HTTP/1.1 404 Not Found"'}
+INFO:     127.0.0.1:61941 - "POST /arbitrage HTTP/1.1" 200
+{"time":"2026-05-10T13:11:45Z","level":"INFO","logger":"agrisync.orchestrator","msg":'SMS (mock) to +254112172294: AgriSync: Bean Angular Leaf Spot detected. Uza Maize Mombasa KES 18,600.'}
+INFO:     127.0.0.1:56444 - "POST /report HTTP/1.1" 200
+INFO:     127.0.0.1:59760 - "POST /farmers/register HTTP/1.1" 201
+INFO:     127.0.0.1:51461 - "GET /diseases HTTP/1.1" 200
+INFO:     127.0.0.1:49676 - "GET /diseases HTTP/1.1" 200

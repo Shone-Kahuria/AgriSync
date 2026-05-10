@@ -8,7 +8,7 @@ export default function GpuStatsPanel({ inferenceMs = null }) {
       .then((r) => r.json())
       .then(setInfo)
       .catch(() => null);
-  }, []);
+  }, [inferenceMs]);
 
   const isReal  = info?.backend === "ROCm";
   const utilPct = info?.utilization_pct ?? 0;
@@ -50,6 +50,12 @@ export default function GpuStatsPanel({ inferenceMs = null }) {
         )}
         {inferenceMs != null && inferenceMs > 0 && (
           <Stat label="Inference" value={`${inferenceMs.toFixed(0)} ms`} accent={isReal} />
+        )}
+        {info?.last_inference_ms > 0 && (
+          <Stat label="GPU time" value={`${info.last_inference_ms.toFixed(0)} ms`} accent={isReal} />
+        )}
+        {info?.inference_count > 0 && (
+          <Stat label="Total runs" value={info.inference_count} />
         )}
         <Stat label="Backend" value={isReal ? "ROCm" : "CPU mock"} />
       </div>
